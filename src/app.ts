@@ -1,6 +1,7 @@
 import * as Koa from 'koa';
 import * as koaLogger from 'koa-logger';
 import * as helmet from 'koa-helmet';
+import * as cors from '@koa/cors';
 
 import { Server } from 'http';
 import { configureRoutes, KoaController } from 'koa-joi-controllers';
@@ -11,6 +12,7 @@ import { TokenService } from './services/token.service';
 import { AuthController } from './controllers/auth.controller';
 import { Logger } from './logger/logger';
 import { setLogger, errorHandler } from './middleware/middleware';
+import { Middleware } from 'koa';
 
 export class App {
   server: Server;
@@ -26,11 +28,9 @@ export class App {
     await this.database.connect();
 
     const app = new Koa();
-
-    app.use(koaLogger()); // disable in PROD?
-    app.use(setLogger);
-    app.use(errorHandler);
-    app.use(helmet());
+    this.configureMiddleware(app, [
+      koaLogger(), setLogger, errorHandler, cors(), helmet()
+    ]);
 
     configureRoutes(app, this.controllers());
 
@@ -42,6 +42,10 @@ export class App {
   terminate(): void {
     this.database.disconnect();
     this.server.close();
+  }
+
+  private configureMiddleware(app: Koa, middleware: Middleware[]) {
+    middleware.forEach(middleware => app.use(middleware));
   }
 
   private controllers(): KoaController[] {
