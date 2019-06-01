@@ -1,5 +1,6 @@
 import * as Koa from 'koa';
 import * as koaLogger from 'koa-logger';
+import * as helmet from 'koa-helmet';
 
 import { Server } from 'http';
 import { configureRoutes, KoaController } from 'koa-joi-controllers';
@@ -29,6 +30,7 @@ export class App {
     app.use(koaLogger()); // disable in PROD?
     app.use(setLogger);
     app.use(errorHandler);
+    app.use(helmet());
 
     configureRoutes(app, this.controllers());
 

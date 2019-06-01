@@ -18,10 +18,12 @@
   "eslintConfig": {
     "parser": "@typescript-eslint/parser",
     "extends": [
-      "plugin:@typescript-eslint/recommended"
+      "plugin:@typescript-eslint/recommended",
+      "plugin:security/recommended"
     ],
     "plugins": [
-      "@typescript-eslint"
+      "@typescript-eslint",
+      "security"
     ],
     "rules": {
       "@typescript-eslint/indent": [
@@ -50,6 +52,7 @@
     "dotenv": "^8.0.0",
     "jsonwebtoken": "^8.5.1",
     "koa": "^2.7.0",
+    "koa-helmet": "^4.1.0",
     "koa-joi-controllers": "^1.0.4",
     "pino": "^5.12.6",
     "rate-limiter-flexible": "^1.0.2",
@@ -63,6 +66,7 @@
     "@types/jest": "^24.0.12",
     "@types/jsonwebtoken": "^8.3.2",
     "@types/koa": "^2.0.48",
+    "@types/koa-helmet": "^3.1.2",
     "@types/koa-joi-router": "^5.2.2",
     "@types/koa-logger": "^3.1.1",
     "@types/pino": "^5.8.7",
@@ -71,6 +75,7 @@
     "@typescript-eslint/eslint-plugin": "^1.8.0",
     "@typescript-eslint/parser": "^1.8.0",
     "eslint": "^5.16.0",
+    "eslint-plugin-security": "^1.4.0",
     "jest": "^24.7.1",
     "koa-logger": "^3.2.0",
     "supertest": "^4.0.2",

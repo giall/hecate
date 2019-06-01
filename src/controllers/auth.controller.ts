@@ -37,6 +37,7 @@ export class AuthController extends KoaController {
   async login(ctx: Context) {
     const { email, password } = ctx.request.body;
     const user = await this.authService.login(email, password);
+    ctx.log.info(`User with userId=${user.id} successfully logged in`);
     this.setTokens(ctx, user);
     ctx.status = 200;
   }

@@ -9,8 +9,6 @@ const credentials = {
     .required()
 }
 
-const test = Validator.Joi;
-
 const login: ValidationOptions = {
   type: 'json',
   body: {
