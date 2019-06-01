@@ -1,5 +1,5 @@
 import { authOptions } from './validation';
-import { Controller, KoaController, Post, Validate } from 'koa-joi-controllers';
+import { Controller, KoaController, Post, Validate, Pre } from 'koa-joi-controllers';
 import { Context } from 'koa';
 import { AuthService } from '../services/auth.service';
 import { TokenService, RefreshPayload } from '../services/token.service';
@@ -7,6 +7,7 @@ import { v4 as uuid } from 'uuid';
 import { UserRepository } from '../repositories/user.repository';
 import { User } from '../database/entity/user';
 import { Errors } from '../error/errors';
+import { loginRateLimit } from '../middleware/middleware';
 
 @Controller('/auth')
 export class AuthController extends KoaController {
@@ -31,6 +32,7 @@ export class AuthController extends KoaController {
   }
 
   @Post('/login')
+  @Pre(loginRateLimit)
   @Validate(authOptions.login)
   async login(ctx: Context) {
     const { email, password } = ctx.request.body;

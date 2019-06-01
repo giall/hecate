@@ -1,4 +1,6 @@
 import { Logger } from '../logger/logger';
+import { RateLimiterMemory } from 'rate-limiter-flexible';
+import { Errors } from '../error/errors';
 
 async function setLogger(ctx, next) {
   ctx.log = new Logger();
@@ -17,6 +19,20 @@ async function errorHandler(ctx, next) {
   }
 };
 
+const rateLimiter = new RateLimiterMemory({
+  points: 20,
+  duration: 60,
+});
+
+async function loginRateLimit(ctx, next) {
+  try {
+    await rateLimiter.consume(ctx.ip);
+  } catch (err) {
+    throw Errors.tooManyRequests();
+  }
+  await next();
+}
+
 export {
-  setLogger, errorHandler
+  setLogger, errorHandler, loginRateLimit
 }

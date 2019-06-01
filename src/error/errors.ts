@@ -16,4 +16,8 @@ export class Errors {
   static conflict(message: string) {
     return new AppError(message, 409);
   }
+
+  static tooManyRequests() {
+    return new AppError('Too many requests', 429);
+  }
 }
