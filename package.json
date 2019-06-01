@@ -1,0 +1,80 @@
+{
+  "name": "koa-auth-server",
+  "version": "1.0.0",
+  "description": "Authentication server using Koa",
+  "scripts": {
+    "start": "tsc && node dist/main.js",
+    "watch": "ts-node-dev src/main.ts | npx pino-pretty",
+    "lint": "eslint --fix ./**/*.ts",
+    "test": "npx jest"
+  },
+  "keywords": [
+    "koa",
+    "typescript",
+    "auth"
+  ],
+  "author": "Christos Giallouros",
+  "license": "MIT",
+  "eslintConfig": {
+    "parser": "@typescript-eslint/parser",
+    "extends": [
+      "plugin:@typescript-eslint/recommended"
+    ],
+    "plugins": [
+      "@typescript-eslint"
+    ],
+    "rules": {
+      "@typescript-eslint/indent": [
+        "warn",
+        2
+      ],
+      "@typescript-eslint/explicit-member-accessibility": [
+        "off"
+      ],
+      "@typescript-eslint/explicit-function-return-type": [
+        "off"
+      ],
+      "quotes": [
+        "warn",
+        "single"
+      ]
+    }
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "collectCoverage": true
+  },
+  "dependencies": {
+    "bcrypt": "^3.0.6",
+    "dotenv": "^8.0.0",
+    "jsonwebtoken": "^8.5.1",
+    "koa": "^2.7.0",
+    "koa-joi-controllers": "^1.0.4",
+    "pino": "^5.12.6",
+    "sqlite3": "^4.0.8",
+    "typeorm": "^0.2.17",
+    "uuid": "^3.3.2"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^3.0.0",
+    "@types/dotenv": "^6.1.1",
+    "@types/jest": "^24.0.12",
+    "@types/jsonwebtoken": "^8.3.2",
+    "@types/koa": "^2.0.48",
+    "@types/koa-joi-router": "^5.2.2",
+    "@types/koa-logger": "^3.1.1",
+    "@types/pino": "^5.8.7",
+    "@types/supertest": "^2.0.7",
+    "@types/uuid": "^3.4.4",
+    "@typescript-eslint/eslint-plugin": "^1.8.0",
+    "@typescript-eslint/parser": "^1.8.0",
+    "eslint": "^5.16.0",
+    "jest": "^24.7.1",
+    "koa-logger": "^3.2.0",
+    "supertest": "^4.0.2",
+    "ts-jest": "^24.0.2",
+    "ts-node-dev": "^1.0.0-pre.32",
+    "typescript": "^3.4.5"
+  }
+}
