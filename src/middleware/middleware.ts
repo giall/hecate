@@ -2,8 +2,12 @@ import { Logger } from '../logger/logger';
 import { RateLimiterMemory } from 'rate-limiter-flexible';
 import { Errors } from '../error/errors';
 
-async function setLogger(ctx, next) {
-  ctx.log = new Logger();
+import * as koaLogger from 'koa-logger';
+
+const logger = new Logger();
+
+async function ctxLogger(ctx, next) {
+  ctx.log = logger;
   await next();
 };
 
@@ -33,6 +37,12 @@ async function loginRateLimit(ctx, next) {
   await next();
 }
 
+const requestLogger = koaLogger({
+  transporter: (str) => {
+    logger.info(str);  
+  }
+});
+
 export {
-  setLogger, errorHandler, loginRateLimit
+  requestLogger, ctxLogger, errorHandler, loginRateLimit
 }

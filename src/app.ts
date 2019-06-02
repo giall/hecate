@@ -1,5 +1,4 @@
 import * as Koa from 'koa';
-import * as koaLogger from 'koa-logger';
 import * as helmet from 'koa-helmet';
 import * as cors from '@koa/cors';
 
@@ -11,7 +10,7 @@ import { AuthService } from './services/auth.service';
 import { TokenService } from './services/token.service';
 import { AuthController } from './controllers/auth.controller';
 import { Logger } from './logger/logger';
-import { setLogger, errorHandler } from './middleware/middleware';
+import { ctxLogger, errorHandler, requestLogger } from './middleware/middleware';
 import { Middleware } from 'koa';
 
 export class App {
@@ -29,7 +28,7 @@ export class App {
 
     const app = new Koa();
     this.configureMiddleware(app, [
-      koaLogger(), setLogger, errorHandler, cors(), helmet()
+      requestLogger, ctxLogger, errorHandler, cors(), helmet()
     ]);
 
     configureRoutes(app, this.controllers());
