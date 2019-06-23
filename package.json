@@ -1,7 +1,7 @@
 {
-  "name": "koa-auth-server",
+  "name": "koa-auth-service",
   "version": "1.0.0",
-  "description": "Authentication server using Koa",
+  "description": "Authentication service built with Koa",
   "scripts": {
     "start": "tsc && node dist/main.js",
     "watch": "ts-node-dev src/main.ts | pino-pretty",
