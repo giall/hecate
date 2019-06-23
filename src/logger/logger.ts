@@ -4,7 +4,7 @@ export class Logger {
   private logger: pino.Logger;
 
   constructor() {
-    this.logger = pino();
+    this.logger = pino({level: process.env.LOG_LEVEL || 'info'});
   }
 
   debug(log: {}) {
