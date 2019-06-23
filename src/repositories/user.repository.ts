@@ -11,11 +11,13 @@ export class UserRepository {
   }
 
   async findById(id: string): Promise<User> {
-    return this.collection.findOne({ _id: new ObjectId(id) });
+    const entity = await this.collection.findOne({ _id: new ObjectId(id) });
+    return entity && new User(entity);
   }
 
   async find(options: {}): Promise<User> {
-    return new User(await this.collection.findOne(options));
+    const entity = await this.collection.findOne(options);
+    return entity && new User(entity);
   }
 
   async create(user: User) {

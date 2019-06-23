@@ -6,7 +6,7 @@
     "start": "tsc && node dist/main.js",
     "watch": "ts-node-dev src/main.ts | pino-pretty",
     "lint": "eslint --fix ./**/*.ts",
-    "test": "npx jest"
+    "test": "jest"
   },
   "keywords": [
     "koa",
@@ -73,6 +73,7 @@
     "@types/koa-logger": "^3.1.1",
     "@types/koa__cors": "^2.2.3",
     "@types/mongodb": "^3.1.28",
+    "@types/mongodb-memory-server": "^1.8.0",
     "@types/pino": "^5.8.7",
     "@types/supertest": "^2.0.7",
     "@types/uuid": "^3.4.4",
@@ -82,6 +83,7 @@
     "eslint-plugin-security": "^1.4.0",
     "jest": "^24.7.1",
     "koa-logger": "^3.2.0",
+    "mongodb-memory-server": "^5.1.5",
     "pino-pretty": "^3.2.0",
     "supertest": "^4.0.2",
     "ts-jest": "^24.0.2",

@@ -9,7 +9,7 @@ import { Errors } from '../error/errors';
 import { loginRateLimit } from '../middleware/middleware';
 import { User } from '../models/user';
 
-@Controller('/auth')
+@Controller('/api')
 export class AuthController extends KoaController {
 
   userRepository: UserRepository;

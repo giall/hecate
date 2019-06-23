@@ -18,12 +18,12 @@ export class App {
   database: Database;
   logger: Logger;
 
-  constructor() {
+  constructor(database: Database) {
+    this.database = database;
     this.logger = new Logger();
   }
 
   async bootstrap(): Promise<void> {
-    this.database = new Database();
     await this.database.connect();
 
     const app = new Koa();
@@ -39,6 +39,7 @@ export class App {
   }
 
   terminate(): void {
+    this.logger.info('Shutting down...');
     this.database.disconnect();
     this.server.close();
   }
