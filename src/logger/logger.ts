@@ -7,8 +7,8 @@ export class Logger {
     this.logger = pino();
   }
 
-  debug(message: string) {
-    this.logger.debug(message);
+  debug(log: {}) {
+    this.logger.debug(JSON.stringify(log));
   }
 
   info(message: string) {

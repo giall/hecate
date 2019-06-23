@@ -1,38 +1,33 @@
-import { User } from '../database/entity/user';
 import { sign, verify } from 'jsonwebtoken';
 import { Errors } from '../error/errors';
+import { User } from '../models/user';
 
 export interface AccessPayload {
-  id: number;
-  username: string; 
-  role: string;
+  id: string;
+  username: string;
 }
 
 export interface RefreshPayload {
-  id: number;
+  id: string;
   session: string;
 }
 
-export class TokenService {
-  private secret: {
-    access: string;
-    refresh: string;
-  }
+export enum Token {
+  Access,
+  Refresh
+}
 
-  constructor(secret: {access: string; refresh: string}) {
-    this.secret = secret;
-  }
+export class TokenService {
 
   access(user: User) {
     const payload: AccessPayload = {
       id: user.id,
-      username: user.username,
-      role: user.role
+      username: user.username
     }
     const options = {
       expiresIn: '1m'
     }
-    return sign(payload, this.secret.access, options);
+    return sign(payload, this.token(Token.Access), options);
   }
 
   refresh(user: User, sessionId: string) {
@@ -43,14 +38,19 @@ export class TokenService {
     const options = {
       expiresIn: '5m'
     }
-    return sign(payload, this.secret.refresh, options);
+    return sign(payload, this.token(Token.Refresh), options);
   }
 
-  decode(token: string, type: 'access' | 'refresh') {
+  decode(token: string, type: Token) {
     try {
-      return verify(token, this.secret[type]);
+      return verify(token, this.token(type));
     } catch (err) {
       throw Errors.unauthorized('invalid token');
     }
+  }
+
+  private token(type: Token): string {
+    if (type === Token.Access) return process.env.ACCESS_SECRET;
+    else if (type === Token.Refresh) return process.env.REFRESH_SECRET;
   }
 }

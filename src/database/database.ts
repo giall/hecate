@@ -1,40 +1,35 @@
+import { MongoClient, Collection } from 'mongodb';
 import { Logger } from '../logger/logger';
-import { SqliteConnectionOptions } from 'typeorm/driver/sqlite/SqliteConnectionOptions';
-import { createConnection, Connection, Repository } from 'typeorm';
-import { User } from './entity/user';
 
 export class Database {
+  name: string;
+  uri: string;
 
-  connection: Connection;
-
-  private logger: Logger;
-
-  private options: SqliteConnectionOptions = {
-    type: 'sqlite',
-    database: 'db.sqlite',
-    synchronize: true,
-    entities: [
-      __dirname + '/entity/*.{js,ts}'
-    ],
-    logging: true // disable in PROD?
-  }
+  client: MongoClient;
+  logger: Logger;
 
   constructor() {
     this.logger = new Logger();
+    this.name = process.env.MONGODB_NAME;
+
+    const user = process.env.MONGODB_USER;
+    const password = process.env.MONGODB_PASSWORD;
+    const url = process.env.MONGODB_URL;
+    this.uri = `mongodb+srv://${user}:${password}@${url}?retryWrites=true`;
   }
 
   async connect(): Promise<void> {
-    this.logger.info('Connecting to database...');
-    this.connection = await createConnection(this.options);
+    this.logger.info(`Connecting to database ${this.name}...`)
+    const options = { useNewUrlParser: true };
+    this.client = await new MongoClient(this.uri, options).connect();
     this.logger.info('Successfully connected to database.');
   }
 
   disconnect(): void {
-    this.connection.close();
+    this.client.close();
   }
-
-  getUsers(): Repository<User> {
-    return this.connection.getRepository(User);
+  
+  getCollection(collection: string): Collection {
+    return this.client.db(this.name).collection(collection);
   }
-
 }

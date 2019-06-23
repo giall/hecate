@@ -2,12 +2,12 @@ import { authOptions } from './validation';
 import { Controller, KoaController, Post, Validate, Pre } from 'koa-joi-controllers';
 import { Context } from 'koa';
 import { AuthService } from '../services/auth.service';
-import { TokenService, RefreshPayload } from '../services/token.service';
+import { TokenService, RefreshPayload, Token } from '../services/token.service';
 import { v4 as uuid } from 'uuid';
 import { UserRepository } from '../repositories/user.repository';
-import { User } from '../database/entity/user';
 import { Errors } from '../error/errors';
 import { loginRateLimit } from '../middleware/middleware';
+import { User } from '../models/user';
 
 @Controller('/auth')
 export class AuthController extends KoaController {
@@ -37,16 +37,17 @@ export class AuthController extends KoaController {
   async login(ctx: Context) {
     const { email, password } = ctx.request.body;
     const user = await this.authService.login(email, password);
+    ctx.log.info(user._id.toHexString());
+    ctx.log.info(user.id);
     ctx.log.info(`User with userId=${user.id} successfully logged in`);
     this.setTokens(ctx, user);
     ctx.status = 200;
   }
 
   @Post('/logout')
-  @Validate(authOptions.login)
   async logout(ctx: Context) {
     const refreshToken = ctx.cookies.get('refresh');
-    const payload: RefreshPayload = this.tokenService.decode(refreshToken, 'refresh') as RefreshPayload;
+    const payload: RefreshPayload = this.tokenService.decode(refreshToken, Token.Refresh) as RefreshPayload;
     this.authService.removeSession(payload.id, payload.session);
     this.clearTokens(ctx);
     ctx.status = 200;
@@ -55,10 +56,10 @@ export class AuthController extends KoaController {
   @Post('/refresh')
   async refresh(ctx: Context) {
     const refreshToken = ctx.cookies.get('refresh');
-    const payload: RefreshPayload = this.tokenService.decode(refreshToken, 'refresh') as RefreshPayload;
+    const payload: RefreshPayload = this.tokenService.decode(refreshToken, Token.Refresh) as RefreshPayload;
     const user: User = await this.userRepository.findById(payload.id);
     ctx.log.info(`Refreshing tokens for userId=${user.id}`);
-    if (user.sessionValid(payload.session)) {
+    if (user.sessions.includes(payload.session)) {
       this.setTokens(ctx, user);
       this.authService.removeSession(user.id, payload.session);
       ctx.log.info('New access and refresh tokens set');
@@ -71,10 +72,10 @@ export class AuthController extends KoaController {
   @Post('/invalidate')
   async invalidate(ctx: Context) {
     const refreshToken = ctx.cookies.get('refresh');
-    const payload: RefreshPayload = this.tokenService.decode(refreshToken, 'refresh') as RefreshPayload;
+    const payload: RefreshPayload = this.tokenService.decode(refreshToken, Token.Refresh) as RefreshPayload;
     const user: User = await this.userRepository.findById(payload.id);
     ctx.log.info(`Invalidating refresh tokens for userId=${user.id}`);
-    if (user.sessionValid(payload.session)) {
+    if (user.sessions.includes(payload.session)) {
       this.authService.resetSessions(user.id);
       this.clearTokens(ctx);
       ctx.log.info('Tokens successfully invalidated');

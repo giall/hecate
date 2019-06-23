@@ -50,10 +50,7 @@ export class App {
   private controllers(): KoaController[] {
     const userRepository = new UserRepository(this.database);
     const authService = new AuthService(userRepository);
-    const tokenService = new TokenService({
-      access: process.env.ACCESS_SECRET,
-      refresh: process.env.REFRESH_SECRET
-    });
+    const tokenService = new TokenService();
     return [
       new AuthController(userRepository, authService, tokenService)
     ];

@@ -1,30 +1,30 @@
-import { User } from '../database/entity/user';
-import { Repository } from 'typeorm';
 import { Database } from '../database/database';
-import { hash as hashPassword } from 'bcrypt';
+import { Collection, ObjectId } from 'mongodb';
+import { User } from '../models/user';
 
 export class UserRepository {
-  private repository: Repository<User>;
+
+  private collection: Collection;
 
   constructor(database: Database) {
-    this.repository = database.getUsers();
+    this.collection = database.getCollection('users');
   }
 
-  async findById(id: number): Promise<User> {
-    return this.repository.findOne(id);
+  async findById(id: string): Promise<User> {
+    return this.collection.findOne({ _id: new ObjectId(id) });
   }
 
-  async find(params: {}): Promise<User> {
-    return this.repository.findOne(params);
+  async find(options: {}): Promise<User> {
+    return new User(await this.collection.findOne(options));
   }
 
-  async create(user: {username: string; password: string; email: string}) {
-    const {username, password, email} = user;
-    const hash = await hashPassword(password, 10);
-    return this.repository.save({username, hash, email, role: 'user'});
+  async create(user: User) {
+    return this.collection.insertOne(user);
   }
 
-  async update(user: User) {
-    return this.repository.save(user);
+  async updateSessions(id: string, sessions: string[]) {
+    return this.collection.updateOne({ _id: new ObjectId(id) }, {
+      $set: { sessions }
+    });
   }
 }

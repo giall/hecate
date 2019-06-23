@@ -1,65 +1,60 @@
-import { compare } from 'bcrypt';
-import { User } from '../database/entity/user';
+import { compare, hash } from 'bcrypt';
 import { UserRepository } from '../repositories/user.repository';
 import { Logger } from '../logger/logger';
 import { Errors } from '../error/errors';
+import { User } from '../models/user';
 
 export class AuthService {
-  private userService: UserRepository;
+  private userRepository: UserRepository;
   private logger: Logger;
 
   constructor(userRepository: UserRepository) {
     this.logger = new Logger();
-    this.userService = userRepository;
+    this.userRepository = userRepository;
   }
 
   async register(newUser: { username: string; email: string; password: string }) {
-    const { username, email } = newUser;
+    const { username, email, password } = newUser;
     this.logger.info(`Registering user: ${username} with email: ${email}`);
-    let user = await this.userService.find({username});
+    let user = await this.userRepository.find({username});
     if (user) {
       throw Errors.conflict(`User with username: ${username} already exists`);
     }
-    user = await this.userService.find({email});
+    user = await this.userRepository.find({email});
     if (user) {
       throw Errors.conflict(`User with email: ${email} already exists`);
     }
-    this.userService.create(newUser);
+    return this.userRepository.create(new User({username, email, password: await hash(password, 10)}));
   }
 
   async login(email: string, password: string): Promise<User> {
-    const user = await this.userService.find({email});
+    const user = await this.userRepository.find({email});
     if (!user) {
-      throw Errors.unauthorized('User does not exist');
+      throw Errors.notFound('User does not exist');
     }
-    const success = await compare(password, user.hash);
+    const success = await compare(password, user.password);
     if (!success) {
       throw Errors.unauthorized('Invalid password');
     }
     return user;
   }
 
-  async addSession(userId: number, sessionId: string) {
-    const user: User = await this.userService.findById(userId);
-    let sessions = user.getSessions();
-    if (sessions.length >= 5) {
-      sessions.shift();
+  async addSession(userId: string, sessionId: string) {
+    const user = await this.userRepository.findById(userId);
+    if (user.sessions.length > 5) {
+      user.sessions.shift(); // save up to 5 sessions at a time
     }
-    sessions.push(sessionId);
-    user.setSessions(sessions);
-    this.userService.update(user);
+    user.sessions.push(sessionId);
+    return this.userRepository.updateSessions(userId, user.sessions);
   }
 
-  async removeSession(userId: number, sessionId: string) {
-    const user = await this.userService.findById(userId);
-    const sessions = user.getSessions().filter(session => session !== sessionId);
-    user.setSessions(sessions);
-    this.userService.update(user);
+  async removeSession(userId: string, sessionId: string) {
+    const user = await this.userRepository.findById(userId);
+    const sessions = user.sessions.filter(session => session !== sessionId);
+    return this.userRepository.updateSessions(userId, sessions);
   }
 
-  async resetSessions(userId: number) {
-    const user = await this.userService.findById(userId);
-    user.sessions = '';
-    this.userService.update(user);
+  async resetSessions(userId: string) {
+    return this.userRepository.updateSessions(userId, []);
   }
 }
