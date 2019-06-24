@@ -16,7 +16,6 @@ export class Database {
     this.logger.info('Connecting to database...');
 
     const options = { useNewUrlParser: true };
-    console.log(this.uri);
     this.client = await new MongoClient(this.uri, options).connect();
 
     this.logger.info('Successfully connected to database.');

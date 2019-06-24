@@ -3,11 +3,14 @@ import { App } from '../../src/app';
 import { config } from 'dotenv';
 import { Database } from '../../src/database/database';
 import { MongoMemoryServer } from 'mongodb-memory-server';
+import { TokenService } from '../../src/services/token.service';
+import { User } from '../../src/models/user';
 
 let app: App;
 let mongod: MongoMemoryServer;
 let dbUri: string;
 let dbName: string;
+let database: Database;
 
 beforeAll(async () => {
   config();
@@ -17,7 +20,7 @@ beforeAll(async () => {
     }
   });
   dbUri = await mongod.getConnectionString();
-  const database = new Database(dbUri);
+  database = new Database(dbUri);
   app = new App(database);
   await app.bootstrap();
 });
@@ -39,7 +42,7 @@ describe('/api/register', () => {
     expect(response.status).toEqual(201);
   });
 
-  test('Should not register user if email already exists', async () => {
+  test('Should fail if email already exists', async () => {
     const response = await request(app.server)
     .post('/api/register')
     .send({
@@ -50,7 +53,7 @@ describe('/api/register', () => {
     expect(response.status).toEqual(409);
   });
 
-  test('Should not register user if username already exists', async () => {
+  test('Should fail if username already exists', async () => {
     const response = await request(app.server)
     .post('/api/register')
     .send({
@@ -63,7 +66,7 @@ describe('/api/register', () => {
 });
 
 describe('/api/login', () => {
-  test('Login should be successful', async () => {
+  test('Should be successful', async () => {
     const response = await request(app.server).post('/api/login').send({
       email: 'an@email.com',
       password: 'password1'
@@ -76,7 +79,7 @@ describe('/api/login', () => {
     expect(cookies[1]).toContain('refresh=');
   });
 
-  test('Login should fail if password is incorrect', async () => {
+  test('Should fail if password is incorrect', async () => {
     const response = await request(app.server).post('/api/login').send({
       email: 'an@email.com',
       password: 'password2'
@@ -85,7 +88,7 @@ describe('/api/login', () => {
     expect(response.header['set-cookie']).toBe(undefined);
   });
 
-  test('Login should fail if user does not exist', async () => {
+  test('Should fail if user does not exist', async () => {
     const response = await request(app.server).post('/api/login').send({
       email: 'another@email.com',
       password: 'password2'
@@ -94,3 +97,26 @@ describe('/api/login', () => {
     expect(response.header['set-cookie']).toBe(undefined);
   });
 });
+
+describe('/api/logout', () => {
+  test('Should logout successfully', async () => {
+    const user = await getUser();
+    const cookie = `refresh=${new TokenService().refresh(user, user.sessions[0])}`;;
+    
+    const response = await request(app.server).post('/api/logout').set('Cookie', cookie);
+    
+    expect(response.status).toEqual(200);
+    const updatedUser = await getUser();
+    expect(updatedUser.sessions.length).toEqual(0);
+  });
+
+  test('Should fail if there is no token', async () => {
+    const response = await request(app.server).post('/api/logout');
+    expect(response.status).toEqual(401);
+  });
+});
+
+async function getUser(): Promise<User> {
+  const users = await database.getCollection('users').find().toArray();
+  return new User(users[0]);
+}

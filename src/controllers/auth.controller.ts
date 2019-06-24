@@ -48,7 +48,7 @@ export class AuthController extends KoaController {
   async logout(ctx: Context) {
     const refreshToken = ctx.cookies.get('refresh');
     const payload: RefreshPayload = this.tokenService.decode(refreshToken, Token.Refresh) as RefreshPayload;
-    this.authService.removeSession(payload.id, payload.session);
+    await this.authService.removeSession(payload.id, payload.session);
     this.clearTokens(ctx);
     ctx.status = 200;
   }
@@ -61,7 +61,7 @@ export class AuthController extends KoaController {
     ctx.log.info(`Refreshing tokens for userId=${user.id}`);
     if (user.sessions.includes(payload.session)) {
       this.setTokens(ctx, user);
-      this.authService.removeSession(user.id, payload.session);
+      await this.authService.removeSession(user.id, payload.session);
       ctx.log.info('New access and refresh tokens set');
       ctx.status = 200;
     } else {
@@ -76,7 +76,7 @@ export class AuthController extends KoaController {
     const user: User = await this.userRepository.findById(payload.id);
     ctx.log.info(`Invalidating refresh tokens for userId=${user.id}`);
     if (user.sessions.includes(payload.session)) {
-      this.authService.resetSessions(user.id);
+      await this.authService.resetSessions(user.id);
       this.clearTokens(ctx);
       ctx.log.info('Tokens successfully invalidated');
       ctx.status = 200;
@@ -85,7 +85,7 @@ export class AuthController extends KoaController {
     }
   }
 
-  private setTokens(ctx: Context, user: User) {
+  private async setTokens(ctx: Context, user: User) {
     const options = { secure: false, httpOnly: false };
   
     const accessToken = this.tokenService.access(user);
@@ -94,7 +94,7 @@ export class AuthController extends KoaController {
     const sessionId = uuid();
     const refreshToken = this.tokenService.refresh(user, sessionId);
     ctx.cookies.set('refresh', refreshToken, options);
-    this.authService.addSession(user.id, sessionId);
+    await this.authService.addSession(user.id, sessionId);
   }
 
   private clearTokens(ctx: Context) {
