@@ -1,6 +1,9 @@
+import { config } from 'dotenv';
+config();
+process.env.LOG_LEVEL = 'silent';
+
 import * as request from 'supertest';
 import { App } from '../../src/app';
-import { config } from 'dotenv';
 import { Database } from '../../src/database/database';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { TokenService } from '../../src/services/token.service';
@@ -13,7 +16,6 @@ let dbName: string;
 let database: Database;
 
 beforeAll(async () => {
-  config();
   mongod = new MongoMemoryServer({
     instance: {
       dbName
@@ -26,7 +28,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  app.terminate();
+  await app.terminate();
   await mongod.stop();
 });
 

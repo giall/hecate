@@ -21,8 +21,8 @@ export class Database {
     this.logger.info('Successfully connected to database.');
   }
 
-  disconnect(): void {
-    this.client.close();
+  async disconnect(): Promise<void> {
+    await this.client.close();
     this.logger.info('Disconnected from database.');
   }
 

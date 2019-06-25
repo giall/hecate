@@ -38,9 +38,9 @@ export class App {
     this.logger.info(`Server running on port ${port}...`);
   }
 
-  terminate(): void {
+  async terminate(): Promise<void> {
     this.logger.info('Shutting down...');
-    this.database.disconnect();
+    await this.database.disconnect();
     this.server.close();
   }
 
