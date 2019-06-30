@@ -13,8 +13,8 @@ export interface RefreshPayload {
 }
 
 export enum Token {
-  Access,
-  Refresh
+  Access = 'access',
+  Refresh = 'refresh'
 }
 
 export class TokenService {

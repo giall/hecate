@@ -37,16 +37,14 @@ export class AuthController extends KoaController {
   async login(ctx: Context) {
     const { email, password } = ctx.request.body;
     const user = await this.authService.login(email, password);
-    ctx.log.info(user._id.toHexString());
-    ctx.log.info(user.id);
     ctx.log.info(`User with userId=${user.id} successfully logged in`);
-    this.setTokens(ctx, user);
+    await this.setTokens(ctx, user);
     ctx.status = 200;
   }
 
   @Post('/logout')
   async logout(ctx: Context) {
-    const refreshToken = ctx.cookies.get('refresh');
+    const refreshToken = ctx.cookies.get(Token.Refresh);
     const payload: RefreshPayload = this.tokenService.decode(refreshToken, Token.Refresh) as RefreshPayload;
     await this.authService.removeSession(payload.id, payload.session);
     this.clearTokens(ctx);
@@ -60,7 +58,7 @@ export class AuthController extends KoaController {
     const user: User = await this.userRepository.findById(payload.id);
     ctx.log.info(`Refreshing tokens for userId=${user.id}`);
     if (user.sessions.includes(payload.session)) {
-      this.setTokens(ctx, user);
+      await this.setTokens(ctx, user);
       await this.authService.removeSession(user.id, payload.session);
       ctx.log.info('New access and refresh tokens set');
       ctx.status = 200;
@@ -71,7 +69,7 @@ export class AuthController extends KoaController {
 
   @Post('/invalidate')
   async invalidate(ctx: Context) {
-    const refreshToken = ctx.cookies.get('refresh');
+    const refreshToken = ctx.cookies.get(Token.Refresh);
     const payload: RefreshPayload = this.tokenService.decode(refreshToken, Token.Refresh) as RefreshPayload;
     const user: User = await this.userRepository.findById(payload.id);
     ctx.log.info(`Invalidating refresh tokens for userId=${user.id}`);
@@ -87,18 +85,18 @@ export class AuthController extends KoaController {
 
   private async setTokens(ctx: Context, user: User) {
     const options = { secure: false, httpOnly: false };
-  
+    
     const accessToken = this.tokenService.access(user);
-    ctx.cookies.set('access', accessToken, options);
+    ctx.cookies.set(Token.Access, accessToken, options);
 
     const sessionId = uuid();
-    const refreshToken = this.tokenService.refresh(user, sessionId);
-    ctx.cookies.set('refresh', refreshToken, options);
     await this.authService.addSession(user.id, sessionId);
+    const refreshToken = this.tokenService.refresh(user, sessionId);
+    ctx.cookies.set(Token.Refresh, refreshToken, options);
   }
 
   private clearTokens(ctx: Context) {
-    ctx.cookies.set('access', undefined);
-    ctx.cookies.set('refresh', undefined);
+    ctx.cookies.set(Token.Access, undefined);
+    ctx.cookies.set(Token.Refresh, undefined);
   }
 }

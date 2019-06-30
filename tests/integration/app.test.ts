@@ -15,6 +15,11 @@ let dbUri: string;
 let dbName: string;
 let database: Database;
 
+async function getUser(): Promise<User> {
+  const users = await database.getCollection('users').find().toArray();
+  return new User(users[0]);
+}
+
 beforeAll(async () => {
   mongod = new MongoMemoryServer({
     instance: {
@@ -35,34 +40,34 @@ afterAll(async () => {
 describe('/api/register', () => {
   test('Should register user successfully', async () => {
     const response = await request(app.server)
-    .post('/api/register')
-    .send({
-      username: 'a_username',
-      email: 'an@email.com',
-      password: 'password1'
-    });
+      .post('/api/register')
+      .send({
+        username: 'a_username',
+        email: 'an@email.com',
+        password: 'password1'
+      });
     expect(response.status).toEqual(201);
   });
 
   test('Should fail if email already exists', async () => {
     const response = await request(app.server)
-    .post('/api/register')
-    .send({
-      username: 'another_username',
-      email: 'an@email.com',
-      password: 'password2'
-    });
+      .post('/api/register')
+      .send({
+        username: 'another_username',
+        email: 'an@email.com',
+        password: 'password2'
+      });
     expect(response.status).toEqual(409);
   });
 
   test('Should fail if username already exists', async () => {
     const response = await request(app.server)
-    .post('/api/register')
-    .send({
-      username: 'a_username',
-      email: 'another@email.com',
-      password: 'password3'
-    });
+      .post('/api/register')
+      .send({
+        username: 'a_username',
+        email: 'another@email.com',
+        password: 'password3'
+      });
     expect(response.status).toEqual(409);
   });
 });
@@ -117,8 +122,3 @@ describe('/api/logout', () => {
     expect(response.status).toEqual(401);
   });
 });
-
-async function getUser(): Promise<User> {
-  const users = await database.getCollection('users').find().toArray();
-  return new User(users[0]);
-}
