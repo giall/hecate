@@ -4,12 +4,12 @@ import { Errors } from '../error/errors';
 
 import * as koaLogger from 'koa-logger';
 
-const logger = new Logger();
-
-async function ctxLogger(ctx, next) {
-  ctx.log = logger;
-  await next();
-};
+function ctxLogger(logger: Logger) {
+  return async function ctxLogger(ctx, next) {
+    ctx.log = logger;
+    await next();
+  };
+}
 
 async function errorHandler(ctx, next) {
   try {
@@ -37,11 +37,13 @@ async function loginRateLimit(ctx, next) {
   await next();
 }
 
-const requestLogger = koaLogger({
-  transporter: (str) => {
-    logger.info(str);  
-  }
-});
+function requestLogger(logger: Logger) {
+  return koaLogger({
+    transporter: (str) => {
+      logger.info(str);
+    }
+  });
+}
 
 export {
   requestLogger, ctxLogger, errorHandler, loginRateLimit

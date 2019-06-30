@@ -37,7 +37,7 @@ export class AuthController extends KoaController {
   async login(ctx: Context) {
     const { email, password } = ctx.request.body;
     const user = await this.authService.login(email, password);
-    ctx.log.info(`User with userId=${user.id} successfully logged in`);
+    ctx.log.info(`User with id=${user.id} successfully logged in`);
     await this.setTokens(ctx, user);
     ctx.status = 200;
   }
@@ -56,7 +56,7 @@ export class AuthController extends KoaController {
     const refreshToken = ctx.cookies.get('refresh');
     const payload: RefreshPayload = this.tokenService.decode(refreshToken, Token.Refresh) as RefreshPayload;
     const user: User = await this.userRepository.findById(payload.id);
-    ctx.log.info(`Refreshing tokens for userId=${user.id}`);
+    ctx.log.info(`Refreshing tokens for user with id=${user.id}`);
     if (user.sessions.includes(payload.session)) {
       await this.setTokens(ctx, user);
       await this.authService.removeSession(user.id, payload.session);
@@ -72,7 +72,7 @@ export class AuthController extends KoaController {
     const refreshToken = ctx.cookies.get(Token.Refresh);
     const payload: RefreshPayload = this.tokenService.decode(refreshToken, Token.Refresh) as RefreshPayload;
     const user: User = await this.userRepository.findById(payload.id);
-    ctx.log.info(`Invalidating refresh tokens for userId=${user.id}`);
+    ctx.log.info(`Invalidating refresh tokens for user with id=${user.id}`);
     if (user.sessions.includes(payload.session)) {
       await this.authService.resetSessions(user.id);
       this.clearTokens(ctx);

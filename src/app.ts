@@ -28,7 +28,7 @@ export class App {
 
     const app = new Koa();
     this.configureMiddleware(app, [
-      requestLogger, ctxLogger, errorHandler, cors(), helmet()
+      requestLogger(this.logger), ctxLogger(this.logger), errorHandler, cors(), helmet()
     ]);
 
     configureRoutes(app, this.controllers());

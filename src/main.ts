@@ -1,8 +1,8 @@
 import { config } from 'dotenv';
-config();
-
 import { App } from './app';
 import { Database } from './database/database';
+
+config();
 
 const user = process.env.MONGODB_USER;
 const password = process.env.MONGODB_PASSWORD;
