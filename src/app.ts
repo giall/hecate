@@ -7,7 +7,6 @@ import { configureRoutes, KoaController } from 'koa-joi-controllers';
 import { Database } from './database/database';
 import { UserRepository } from './repositories/user.repository';
 import { AuthService } from './services/auth.service';
-import { TokenService } from './services/token.service';
 import { ApiController } from './controllers/api.controller';
 import { Logger } from './logger/logger';
 import { ctxLogger, errorHandler, requestLogger } from './middleware/middleware';
@@ -52,10 +51,9 @@ export class App {
   private controllers(): KoaController[] {
     const userRepository = new UserRepository(this.database);
     const authService = new AuthService(userRepository);
-    const tokenService = new TokenService();
     const transporter = new Transporter();
     return [
-      new ApiController(userRepository, authService, tokenService, transporter)
+      new ApiController(userRepository, authService, transporter)
     ];
   }
 }

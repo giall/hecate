@@ -1,6 +1,7 @@
 import { Database } from '../database/database';
 import { Collection, ObjectId } from 'mongodb';
 import { User } from '../models/user';
+import { hash } from 'bcrypt';
 
 export class UserRepository {
 
@@ -22,6 +23,12 @@ export class UserRepository {
 
   async create(user: User) {
     return this.collection.insertOne(user);
+  }
+
+  async changePassword(id: string, password: string) {
+    return this.collection.updateOne({ _id: new ObjectId(id) }, {
+      $set: { password: await hash(password, 10) }
+    });
   }
 
   async updateSessions(id: string, sessions: string[]) {

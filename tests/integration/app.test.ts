@@ -2,8 +2,9 @@ import * as request from 'supertest';
 import { App } from '../../src/app';
 import { Database } from '../../src/database/database';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import { TokenService } from '../../src/services/token.service';
+import { TokenUtils } from '../../src/services/token.service';
 import { User } from '../../src/models/user';
+import { properties } from '../../src/properties/properties';
 
 let app: App;
 let mongod: MongoMemoryServer;
@@ -17,7 +18,7 @@ async function getUser(): Promise<User> {
 }
 
 beforeAll(async () => {
-  process.env.LOG_LEVEL = 'silent';
+  properties.logging.level = 'silent';
   mongod = new MongoMemoryServer({
     instance: {
       dbName
@@ -105,7 +106,7 @@ describe('/api/login', () => {
 describe('/api/logout', () => {
   test('Should logout successfully', async () => {
     const user = await getUser();
-    const cookie = `refresh=${new TokenService().refresh(user, user.sessions[0])}`;;
+    const cookie = `refresh=${TokenUtils.refresh(user, user.sessions[0])}`;;
     
     const response = await request(app.server).post('/api/logout').set('Cookie', cookie);
     

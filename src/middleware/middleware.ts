@@ -3,6 +3,7 @@ import { RateLimiterMemory } from 'rate-limiter-flexible';
 import { Errors } from '../error/errors';
 
 import * as koaLogger from 'koa-logger';
+import { Token, Payload, TokenUtils } from '../services/token.service';
 
 function ctxLogger(logger: Logger) {
   return async function ctxLogger(ctx, next) {
@@ -45,6 +46,18 @@ function requestLogger(logger: Logger) {
   });
 }
 
+// requires an access token to be sent with request, and saves user ID in ctx.user
+async function requireAccessToken(ctx, next) {
+  const accessToken = ctx.cookies.get(Token.Access);
+  if (accessToken) {
+    const payload = TokenUtils.decode(accessToken, Token.Access) as Payload;
+    ctx.user = payload.id;
+    await next();
+  } else {
+    throw Errors.unauthorized('No access token included in request');
+  }
+}
+
 export {
-  requestLogger, ctxLogger, errorHandler, loginRateLimit
+  requestLogger, ctxLogger, errorHandler, loginRateLimit, requireAccessToken
 }

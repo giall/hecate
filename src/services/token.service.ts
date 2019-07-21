@@ -11,50 +11,61 @@ export interface Payload {
 
 export enum Token {
   Access = 'access',
-  Refresh = 'refresh'
+  Refresh = 'refresh',
+  EmailVerification = 'emailVerification',
+  PasswordReset = 'passwordReset',
+  TempLogin = 'tempLogin'
 }
 
-export class TokenService {
+export class TokenUtils {
 
-  secret: string;
+  private static secret = properties.jwt.secret;
 
-  constructor() {
-    this.secret = properties.jwt.secret;
+  static access(user: User) {
+    const { id } = user;
+    return this.token({ id }, Token.Access);
   }
 
-  access(user: User) {
-    const payload: Payload = {
-      type: Token.Access,
-      id: user.id
-    }
-    const options = {
-      expiresIn: '1m'
-    }
-    return sign(payload, this.secret, options);
+  static refresh(user: User, session: string) {
+    const { id } = user;
+    return this.token({ id, session }, Token.Refresh);
   }
 
-  refresh(user: User, sessionId: string) {
-    const payload: Payload = {
-      type: Token.Refresh,
-      id: user.id,
-      session: sessionId
-    }
-    const options = {
-      expiresIn: '5m'
-    }
-    return sign(payload, this.secret, options);
+  static emailVerification(user: User) {
+    const { id } = user;
+    return this.token({ id }, Token.EmailVerification);
   }
 
-  decode(token: string, type: Token) {
+  static passwordReset(user: User) {
+    const { id } = user;
+    return this.token({ id }, Token.PasswordReset);
+  }
+
+  static tempLogin(user: User) {
+    const { id } = user;
+    return this.token({ id }, Token.TempLogin);
+  }
+
+  static decode(token: string, type: Token) {
     let payload: Payload;
     try {
       payload = verify(token, this.secret) as Payload;
     } catch (err) {
-      throw Errors.unauthorized('invalid token');
+      throw Errors.unauthorized(`Invalid token: ${err.name}`);
     }
     if (payload.type !== type) {
       throw Errors.forbidden(`Token payload is of type ${payload.type} and not expected type ${type}`);
     }
     return payload;
+  }
+
+  private static token(data: {id: string; session?: string}, type: Token): string {
+    const options = {
+      expiresIn: properties.jwt.expirations[type]
+    }
+    const payload: Payload = {
+      ...data, type
+    }
+    return sign(payload, this.secret, options);
   }
 }

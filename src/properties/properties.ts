@@ -6,7 +6,14 @@ export const properties = {
     level: process.env.LOG_LEVEL || 'info'
   },
   jwt: {
-    secret: process.env.JWT_SECRET
+    secret: process.env.JWT_SECRET,
+    expirations: {
+      access: '1m',
+      refresh: '5m',
+      emailVerification: '60m',
+      passwordReset: '60m',
+      tempLogin: '5m'
+    }
   },
   mongodb: {
     url: process.env.MONGODB_URL,

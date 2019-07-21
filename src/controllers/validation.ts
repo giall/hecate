@@ -27,6 +27,20 @@ const register: ValidationOptions = {
   }
 };
 
+const passwordChange: ValidationOptions = {
+  type: 'json',
+  body: {
+    oldPassword: Validator.Joi.string()
+      .regex(new RegExp(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{0,}$/))
+      .min(8).max(30)
+      .required(),
+    newPassword: Validator.Joi.string()
+      .regex(new RegExp(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{0,}$/))
+      .min(8).max(30)
+      .required()
+  }
+}
+
 export const authOptions = {
-  login, register
+  login, register, passwordChange
 }

@@ -3,6 +3,7 @@ import { UserRepository } from '../repositories/user.repository';
 import { Logger } from '../logger/logger';
 import { Errors } from '../error/errors';
 import { User } from '../models/user';
+import { v4 as uuid } from 'uuid';
 
 export class AuthService {
   private userRepository: UserRepository;
@@ -39,13 +40,15 @@ export class AuthService {
     return user;
   }
 
-  async addSession(userId: string, sessionId: string) {
+  async addSession(userId: string): Promise<string> {
     const user = await this.userRepository.findById(userId);
+    const session = uuid();
     if (user.sessions.length > 5) {
       user.sessions.shift(); // save up to 5 sessions at a time
     }
-    user.sessions.push(sessionId);
-    return this.userRepository.updateSessions(userId, user.sessions);
+    user.sessions.push(session);
+    await this.userRepository.updateSessions(userId, user.sessions);
+    return session;
   }
 
   async removeSession(userId: string, sessionId: string) {
@@ -56,5 +59,18 @@ export class AuthService {
 
   async resetSessions(userId: string) {
     return this.userRepository.updateSessions(userId, []);
+  }
+
+  async changePassword(userId: string, oldPassword: string, newPassword: string) {
+    if (oldPassword === newPassword) {
+      throw Errors.badRequest('Old and new passwords are the same');
+    }
+    const user = await this.userRepository.findById(userId);
+    const success = await compare(oldPassword, user.password);
+    if (!success) {
+      throw Errors.badRequest('Invalid password');
+    }
+    this.logger.info(`Changing password for userId=${userId}`);
+    await this.userRepository.changePassword(userId, newPassword);
   }
 }

@@ -8,6 +8,10 @@ export class AppError extends Error {
 }
 
 export class Errors {
+  static badRequest(message: string) {
+    return new AppError(message, 400);
+  }
+
   static unauthorized(message: string) {
     return new AppError(message, 401);
   }
