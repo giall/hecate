@@ -1,15 +1,12 @@
 import { sign, verify } from 'jsonwebtoken';
 import { Errors } from '../error/errors';
 import { User } from '../models/user';
+import { properties } from '../properties/properties';
 
-export interface AccessPayload {
+export interface Payload {
+  type: Token;
   id: string;
-  username: string;
-}
-
-export interface RefreshPayload {
-  id: string;
-  session: string;
+  session?: string;
 }
 
 export enum Token {
@@ -19,38 +16,45 @@ export enum Token {
 
 export class TokenService {
 
+  secret: string;
+
+  constructor() {
+    this.secret = properties.jwt.secret;
+  }
+
   access(user: User) {
-    const payload: AccessPayload = {
-      id: user.id,
-      username: user.username
+    const payload: Payload = {
+      type: Token.Access,
+      id: user.id
     }
     const options = {
       expiresIn: '1m'
     }
-    return sign(payload, this.token(Token.Access), options);
+    return sign(payload, this.secret, options);
   }
 
   refresh(user: User, sessionId: string) {
-    const payload: RefreshPayload = {
+    const payload: Payload = {
+      type: Token.Refresh,
       id: user.id,
       session: sessionId
     }
     const options = {
       expiresIn: '5m'
     }
-    return sign(payload, this.token(Token.Refresh), options);
+    return sign(payload, this.secret, options);
   }
 
   decode(token: string, type: Token) {
+    let payload: Payload;
     try {
-      return verify(token, this.token(type));
+      payload = verify(token, this.secret) as Payload;
     } catch (err) {
       throw Errors.unauthorized('invalid token');
     }
-  }
-
-  private token(type: Token): string {
-    if (type === Token.Access) return process.env.ACCESS_SECRET;
-    else if (type === Token.Refresh) return process.env.REFRESH_SECRET;
+    if (payload.type !== type) {
+      throw Errors.forbidden(`Token payload is of type ${payload.type} and not expected type ${type}`);
+    }
+    return payload;
   }
 }

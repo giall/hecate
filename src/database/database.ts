@@ -1,5 +1,6 @@
 import { MongoClient, Collection } from 'mongodb';
 import { Logger } from '../logger/logger';
+import { properties } from '../properties/properties';
 
 export class Database {
   uri: string;
@@ -27,7 +28,7 @@ export class Database {
   }
 
   getCollection(collection: string): Collection {
-    const name = process.env.MONGODB_NAME;
+    const name = properties.mongodb.name;
     return this.client.db(name).collection(collection);
   }
 }

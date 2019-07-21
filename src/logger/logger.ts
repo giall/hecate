@@ -1,10 +1,12 @@
 import * as pino from 'pino';
+import { properties } from '../properties/properties';
 
 export class Logger {
   private logger: pino.Logger;
 
   constructor() {
-    this.logger = pino({level: process.env.LOG_LEVEL || 'info'});
+    const { level } = properties.logging;
+    this.logger = pino({level});
   }
 
   debug(log: {}) {

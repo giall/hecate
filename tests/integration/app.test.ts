@@ -4,7 +4,6 @@ import { Database } from '../../src/database/database';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { TokenService } from '../../src/services/token.service';
 import { User } from '../../src/models/user';
-import { config } from 'dotenv';
 
 let app: App;
 let mongod: MongoMemoryServer;
@@ -18,7 +17,6 @@ async function getUser(): Promise<User> {
 }
 
 beforeAll(async () => {
-  config();
   process.env.LOG_LEVEL = 'silent';
   mongod = new MongoMemoryServer({
     instance: {

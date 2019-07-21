@@ -8,10 +8,11 @@ import { Database } from './database/database';
 import { UserRepository } from './repositories/user.repository';
 import { AuthService } from './services/auth.service';
 import { TokenService } from './services/token.service';
-import { AuthController } from './controllers/auth.controller';
+import { ApiController } from './controllers/api.controller';
 import { Logger } from './logger/logger';
 import { ctxLogger, errorHandler, requestLogger } from './middleware/middleware';
 import { Middleware } from 'koa';
+import { Transporter } from './mail/transporter';
 
 export class App {
   server: Server;
@@ -52,8 +53,9 @@ export class App {
     const userRepository = new UserRepository(this.database);
     const authService = new AuthService(userRepository);
     const tokenService = new TokenService();
+    const transporter = new Transporter();
     return [
-      new AuthController(userRepository, authService, tokenService)
+      new ApiController(userRepository, authService, tokenService, transporter)
     ];
   }
 }
