@@ -2,9 +2,9 @@ import * as request from 'supertest';
 import { App } from '../../src/app';
 import { Database } from '../../src/database/database';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import { TokenUtils } from '../../src/services/token.service';
 import { User } from '../../src/models/user';
 import { properties } from '../../src/properties/properties';
+import { TokenUtils } from '../../src/utils/token.utils';
 
 let app: App;
 let mongod: MongoMemoryServer;
@@ -98,7 +98,7 @@ describe('/api/login', () => {
       email: 'another@email.com',
       password: 'password2'
     });
-    expect(response.status).toEqual(404);
+    expect(response.status).toEqual(401);
     expect(response.header['set-cookie']).toBe(undefined);
   });
 });

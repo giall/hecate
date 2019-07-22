@@ -3,7 +3,7 @@ import { RateLimiterMemory } from 'rate-limiter-flexible';
 import { Errors } from '../error/errors';
 
 import * as koaLogger from 'koa-logger';
-import { Token, Payload, TokenUtils } from '../services/token.service';
+import { Token, Payload, TokenUtils } from '../utils/token.utils';
 
 function ctxLogger(logger: Logger) {
   return async function ctxLogger(ctx, next) {

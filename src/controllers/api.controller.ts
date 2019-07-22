@@ -2,7 +2,7 @@ import { authOptions } from './validation';
 import { Controller, KoaController, Post, Validate, Pre, Put } from 'koa-joi-controllers';
 import { Context } from 'koa';
 import { AuthService } from '../services/auth.service';
-import { TokenUtils, Token, Payload } from '../services/token.service';
+import { TokenUtils, Token, Payload } from '../utils/token.utils';
 import { UserRepository } from '../repositories/user.repository';
 import { Errors } from '../error/errors';
 import { loginRateLimit, requireAccessToken } from '../middleware/middleware';
