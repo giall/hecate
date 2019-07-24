@@ -1,7 +1,7 @@
 {
-  "name": "koa-auth-service",
+  "name": "hecate",
   "version": "1.0.0",
-  "description": "Authentication service built with Koa",
+  "description": "Authentication service built with NodeJS/Koa",
   "scripts": {
     "start": "tsc && node dist/main.js",
     "watch": "ts-node-dev src/main.ts | pino-pretty",

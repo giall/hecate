@@ -6,7 +6,8 @@ import { properties } from '../properties/properties';
 export interface Payload {
   type: Token;
   id: string;
-  session?: string;
+  session?: string; // used by refresh token
+  password?: string; // used by password reset token
 }
 
 export enum Token {
@@ -37,8 +38,8 @@ export class TokenUtils {
   }
 
   static passwordReset(user: User) {
-    const { id } = user;
-    return this.token({ id }, Token.PasswordReset);
+    const { id, password } = user;
+    return this.token({ id, password }, Token.PasswordReset);
   }
 
   static tempLogin(user: User) {
@@ -59,7 +60,7 @@ export class TokenUtils {
     return payload;
   }
 
-  private static token(data: {id: string; session?: string}, type: Token): string {
+  private static token(data: {id: string; session?: string, password?: string}, type: Token): string {
     const options = {
       expiresIn: properties.jwt.expirations[type]
     }

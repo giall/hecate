@@ -5,6 +5,7 @@ export class User {
   username: string;
   password: string;
   email: string;
+  verified = false;
   sessions: string[] = [];
 
   get id(): string {

@@ -31,6 +31,12 @@ export class UserRepository {
     });
   }
 
+  async verifyEmail(id: string) {
+    return this.collection.updateOne({ _id: new ObjectId(id) }, {
+      $set: { verified: true }
+    });
+  }
+
   async updateSessions(id: string, sessions: string[]) {
     return this.collection.updateOne({ _id: new ObjectId(id) }, {
       $set: { sessions }

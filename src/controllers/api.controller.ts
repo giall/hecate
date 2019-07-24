@@ -55,7 +55,7 @@ export class ApiController extends KoaController {
   async refresh(ctx: Context) {
     const refreshToken = ctx.cookies.get('refresh');
     const payload = TokenUtils.decode(refreshToken, Token.Refresh) as Payload;
-    const user: User = await this.userRepository.findById(payload.id);
+    const user = await this.userRepository.findById(payload.id);
     ctx.log.info(`Refreshing tokens for user with id=${user.id}`);
     if (user.sessions.includes(payload.session)) {
       await this.setTokens(ctx, user);
@@ -71,7 +71,7 @@ export class ApiController extends KoaController {
   async invalidate(ctx: Context) {
     const refreshToken = ctx.cookies.get(Token.Refresh);
     const payload = TokenUtils.decode(refreshToken, Token.Refresh) as Payload;
-    const user: User = await this.userRepository.findById(payload.id);
+    const user = await this.userRepository.findById(payload.id);
     ctx.log.info(`Invalidating refresh tokens for user with id=${user.id}`);
     if (user.sessions.includes(payload.session)) {
       await this.authService.resetSessions(user.id);
@@ -85,15 +85,29 @@ export class ApiController extends KoaController {
 
   @Put('/email/verify')
   async verifyEmail(ctx: Context) {
-    // TODO verify email
+    const token = ctx.query.token;
+    const payload = TokenUtils.decode(token, Token.EmailVerification);
+    const user = await this.userRepository.findById(payload.id);
+    if (user.verified) {
+      throw Errors.badRequest(`User with id=${payload.id} has already verified their email`);
+    }
+    await this.userRepository.verifyEmail(payload.id);
+    ctx.status = 200;
   }
 
   @Put('/password/reset')
   async resetPassword(ctx: Context) {
-    const email = 'giallouros.christos@outlook.com';
-    ctx.log.info(`Sending password reset email to ${email}`);
-    await this.transporter.passwordReset(email);
-    ctx.status = 200;
+    const email = 'giallouros.christos@outlook.com'; // {} ctx.body.email
+    const user = await this.userRepository.find({email});
+    if (user) {
+      const token = TokenUtils.passwordReset(user);
+      // send email with token in reset link
+      ctx.log.info(`Sending password reset email to ${email}`);
+      await this.transporter.passwordReset(email);
+    } else {
+      ctx.log.warn(`Cannot reset password; no account with email ${email}`);
+    }
+    ctx.status = 202;
   }
 
   @Put('/password/change')
@@ -102,6 +116,37 @@ export class ApiController extends KoaController {
   async changePassword(ctx: Context) {
     const { oldPassword, newPassword } = ctx.request.body;
     await this.authService.changePassword(ctx.user, oldPassword, newPassword);
+    ctx.status = 200;
+  }
+
+  @Put('/password/change')
+  @Validate(authOptions.passwordChange)
+  async changePassword2(ctx: Context) {
+    const { token, newPassword } = ctx.request.body;
+    const payload = TokenUtils.decode(token, Token.PasswordReset);
+    const user = await this.userRepository.findById(payload.id);
+    if (user.password !== payload.password) {
+      throw Errors.unauthorized(`Current hash for user with id=${payload.id} does not match with the one in the token`);
+    }
+    await this.userRepository.changePassword(payload.id, newPassword);
+    ctx.status = 200;
+  }
+
+  @Post('/temp/login/request')
+  async tempLoginReq(ctx: Context) {
+    const { email } = ctx.body;
+    const user = await this.userRepository.find({ email });
+    const token = TokenUtils.tempLogin(user);
+    // await this.transporter.tempLogin(email)
+    ctx.status = 202;
+  }
+
+  @Put('/temp/login')
+  async tempLogin(ctx: Context) {
+    const { token } = ctx.request.body;
+    const payload = TokenUtils.decode(token, Token.TempLogin);
+    const user = await this.userRepository.findById(payload.id);
+    this.setTokens(ctx, user);
     ctx.status = 200;
   }
 
