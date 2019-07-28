@@ -1,6 +1,6 @@
 import { Database } from '../database/database';
 import { Collection, ObjectId } from 'mongodb';
-import { User } from '../models/user';
+import { User, Credentials } from '../models/user';
 import { hash } from 'bcrypt';
 
 export class UserRepository {
@@ -13,16 +13,17 @@ export class UserRepository {
 
   async findById(id: string): Promise<User> {
     const entity = await this.collection.findOne({ _id: new ObjectId(id) });
-    return entity && new User(entity);
+    return entity && User.from(entity);
   }
 
   async find(options: {}): Promise<User> {
     const entity = await this.collection.findOne(options);
-    return entity && new User(entity);
+    return entity && User.from(entity);
   }
 
-  async create(user: User) {
-    return this.collection.insertOne(user);
+  async create(user: User): Promise<User> {
+    const result = await this.collection.insertOne(user);
+    return result.ops[0];
   }
 
   async changePassword(id: string, password: string) {

@@ -4,7 +4,6 @@ import { ValidationOptions } from 'koa-joi-controllers/lib/types/validation';
 const credentials = {
   email: Validator.Joi.string().email().required(),
   password: Validator.Joi.string()
-    .regex(new RegExp(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{0,}$/))
     .min(8).max(30)
     .required()
 }
@@ -21,8 +20,8 @@ const register: ValidationOptions = {
   body: {
     ...credentials,
     username: Validator.Joi.string()
-      .regex(new RegExp(/^\S*$/))
-      .min(4).max(20)
+      .alphanum()
+      .min(5).max(30)
       .required(),
   }
 };
@@ -30,14 +29,8 @@ const register: ValidationOptions = {
 const passwordChange: ValidationOptions = {
   type: 'json',
   body: {
-    oldPassword: Validator.Joi.string()
-      .regex(new RegExp(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{0,}$/))
-      .min(8).max(30)
-      .required(),
-    newPassword: Validator.Joi.string()
-      .regex(new RegExp(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{0,}$/))
-      .min(8).max(30)
-      .required()
+    oldPassword: credentials.password,
+    newPassword: credentials.password
   }
 }
 

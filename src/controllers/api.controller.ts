@@ -6,7 +6,7 @@ import { TokenUtils, Token, Payload } from '../utils/token.utils';
 import { UserRepository } from '../repositories/user.repository';
 import { Errors } from '../error/errors';
 import { loginRateLimit, requireAccessToken } from '../middleware/middleware';
-import { User } from '../models/user';
+import { User, UserDto } from '../models/user';
 import { Transporter } from '../mail/transporter';
 
 @Controller('/api')
@@ -27,8 +27,9 @@ export class ApiController extends KoaController {
   @Validate(authOptions.register)
   async register(ctx: Context) {
     const { username, email, password } = ctx.request.body;
-    await this.authService.register({ username, email, password });
+    const user = await this.authService.register({ username, email, password });
     ctx.status = 201;
+    ctx.body = UserDto.from(user);
   }
 
   @Post('/login')
@@ -38,8 +39,28 @@ export class ApiController extends KoaController {
     const { email, password } = ctx.request.body;
     const user = await this.authService.login(email, password);
     ctx.log.info(`User with id=${user.id} successfully logged in`);
-    await this.setTokens(ctx, user);
+    await this.setAuthTokens(ctx, user);
     ctx.status = 200;
+    ctx.body = UserDto.from(user);
+  }
+
+  @Post('/tokenLogin')
+  async tokenLogin(ctx: Context) {
+    const refreshToken = ctx.cookies.get(Token.Refresh);
+    if (!refreshToken) {
+      throw Errors.unauthorized('No refresh token cookie included in /tokenLogin request');
+    }
+    const payload = TokenUtils.decode(refreshToken, Token.Refresh) as Payload;
+    const user = await this.userRepository.findById(payload.id);
+    ctx.log.info(`User with id=${user.id} successfully logged in via refresh token`);
+    await this.setAuthTokens(ctx, user);
+    ctx.status = 200;
+    ctx.body = {
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      verified: user.verified
+    }
   }
 
   @Post('/logout')
@@ -47,7 +68,7 @@ export class ApiController extends KoaController {
     const refreshToken = ctx.cookies.get(Token.Refresh);
     const payload = TokenUtils.decode(refreshToken, Token.Refresh) as Payload;
     await this.authService.removeSession(payload.id, payload.session);
-    this.clearTokens(ctx);
+    this.clearAuthTokens(ctx);
     ctx.status = 200;
   }
 
@@ -58,7 +79,7 @@ export class ApiController extends KoaController {
     const user = await this.userRepository.findById(payload.id);
     ctx.log.info(`Refreshing tokens for user with id=${user.id}`);
     if (user.sessions.includes(payload.session)) {
-      await this.setTokens(ctx, user);
+      await this.setAuthTokens(ctx, user);
       await this.authService.removeSession(user.id, payload.session);
       ctx.log.info('New access and refresh tokens set');
       ctx.status = 200;
@@ -75,7 +96,7 @@ export class ApiController extends KoaController {
     ctx.log.info(`Invalidating refresh tokens for user with id=${user.id}`);
     if (user.sessions.includes(payload.session)) {
       await this.authService.resetSessions(user.id);
-      this.clearTokens(ctx);
+      this.clearAuthTokens(ctx);
       ctx.log.info('Tokens successfully invalidated');
       ctx.status = 200;
     } else {
@@ -146,11 +167,11 @@ export class ApiController extends KoaController {
     const { token } = ctx.request.body;
     const payload = TokenUtils.decode(token, Token.TempLogin);
     const user = await this.userRepository.findById(payload.id);
-    this.setTokens(ctx, user);
+    this.setAuthTokens(ctx, user);
     ctx.status = 200;
   }
 
-  private async setTokens(ctx: Context, user: User) {
+  private async setAuthTokens(ctx: Context, user: User) {
     const options = { secure: false, httpOnly: false };
 
     const accessToken = TokenUtils.access(user);
@@ -161,7 +182,7 @@ export class ApiController extends KoaController {
     ctx.cookies.set(Token.Refresh, refreshToken, options);
   }
 
-  private clearTokens(ctx: Context) {
+  private clearAuthTokens(ctx: Context) {
     ctx.cookies.set(Token.Access, undefined);
     ctx.cookies.set(Token.Refresh, undefined);
   }

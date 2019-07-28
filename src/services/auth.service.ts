@@ -2,7 +2,7 @@ import { compare, hash } from 'bcrypt';
 import { UserRepository } from '../repositories/user.repository';
 import { Logger } from '../logger/logger';
 import { Errors } from '../error/errors';
-import { User } from '../models/user';
+import { User, Credentials } from '../models/user';
 import { v4 as uuid } from 'uuid';
 
 export class AuthService {
@@ -14,8 +14,8 @@ export class AuthService {
     this.userRepository = userRepository;
   }
 
-  async register(newUser: { username: string; email: string; password: string }) {
-    const { username, email, password } = newUser;
+  async register(credentials: Credentials): Promise<User> {
+    const { username, email } = credentials;
     this.logger.info(`Registering user: ${username} with email: ${email}`);
     let user = await this.userRepository.find({username});
     if (user) {
@@ -25,7 +25,8 @@ export class AuthService {
     if (user) {
       throw Errors.conflict(`User with email: ${email} already exists`);
     }
-    return this.userRepository.create(new User({username, email, password: await hash(password, 10)}));
+    this.logger.info(`User ${username} registered successfully.`);
+    return this.userRepository.create(User.create(credentials));
   }
 
   async login(email: string, password: string): Promise<User> {

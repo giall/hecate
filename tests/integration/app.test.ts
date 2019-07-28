@@ -14,11 +14,11 @@ let database: Database;
 
 async function getUser(): Promise<User> {
   const users = await database.getCollection('users').find().toArray();
-  return new User(users[0]);
+  return User.from(users[0]);
 }
 
 beforeAll(async () => {
-  properties.logging.level = 'silent';
+  properties.logging.level = 'test';
   mongod = new MongoMemoryServer({
     instance: {
       dbName
@@ -40,7 +40,7 @@ describe('/api/register', () => {
     const response = await request(app.server)
       .post('/api/register')
       .send({
-        username: 'a_username',
+        username: 'ausername',
         email: 'an@email.com',
         password: 'password1'
       });
@@ -51,7 +51,7 @@ describe('/api/register', () => {
     const response = await request(app.server)
       .post('/api/register')
       .send({
-        username: 'another_username',
+        username: 'anotherusername',
         email: 'an@email.com',
         password: 'password2'
       });
@@ -62,7 +62,7 @@ describe('/api/register', () => {
     const response = await request(app.server)
       .post('/api/register')
       .send({
-        username: 'a_username',
+        username: 'ausername',
         email: 'another@email.com',
         password: 'password3'
       });
