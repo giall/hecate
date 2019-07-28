@@ -12,8 +12,10 @@ let dbUri: string;
 let dbName: string;
 let database: Database;
 
+let user: User;
+
 async function getUser(): Promise<User> {
-  const users = await database.getCollection('users').find().toArray();
+  const users = await database.getCollection('users').find({username: 'TESTUSER'}).toArray();
   return User.from(users[0]);
 }
 
@@ -28,6 +30,15 @@ beforeAll(async () => {
   database = new Database(dbUri);
   app = new App(database);
   await app.bootstrap();
+
+  await request(app.server)
+      .post('/api/register')
+      .send({
+        username: 'TESTUSER',
+        email: 'test@email.com',
+        password: 'password'
+      });
+  user = await getUser();
 });
 
 afterAll(async () => {
@@ -36,9 +47,11 @@ afterAll(async () => {
 });
 
 describe('/api/register', () => {
+  const endpoint = '/api/register';
+
   test('Should register user successfully', async () => {
     const response = await request(app.server)
-      .post('/api/register')
+      .post(endpoint)
       .send({
         username: 'ausername',
         email: 'an@email.com',
@@ -49,7 +62,7 @@ describe('/api/register', () => {
 
   test('Should fail if email already exists', async () => {
     const response = await request(app.server)
-      .post('/api/register')
+      .post(endpoint)
       .send({
         username: 'anotherusername',
         email: 'an@email.com',
@@ -60,7 +73,7 @@ describe('/api/register', () => {
 
   test('Should fail if username already exists', async () => {
     const response = await request(app.server)
-      .post('/api/register')
+      .post(endpoint)
       .send({
         username: 'ausername',
         email: 'another@email.com',
@@ -71,8 +84,10 @@ describe('/api/register', () => {
 });
 
 describe('/api/login', () => {
+  const endpoint = '/api/login';
+
   test('Should be successful', async () => {
-    const response = await request(app.server).post('/api/login').send({
+    const response = await request(app.server).post(endpoint).send({
       email: 'an@email.com',
       password: 'password1'
     });
@@ -85,7 +100,7 @@ describe('/api/login', () => {
   });
 
   test('Should fail if password is incorrect', async () => {
-    const response = await request(app.server).post('/api/login').send({
+    const response = await request(app.server).post(endpoint).send({
       email: 'an@email.com',
       password: 'password2'
     });
@@ -94,7 +109,7 @@ describe('/api/login', () => {
   });
 
   test('Should fail if user does not exist', async () => {
-    const response = await request(app.server).post('/api/login').send({
+    const response = await request(app.server).post(endpoint).send({
       email: 'another@email.com',
       password: 'password2'
     });
@@ -104,11 +119,12 @@ describe('/api/login', () => {
 });
 
 describe('/api/logout', () => {
+  const endpoint = '/api/logout';
+
   test('Should logout successfully', async () => {
-    const user = await getUser();
     const cookie = `refresh=${TokenUtils.refresh(user, user.sessions[0])}`;;
     
-    const response = await request(app.server).post('/api/logout').set('Cookie', cookie);
+    const response = await request(app.server).post(endpoint).set('Cookie', cookie);
     
     expect(response.status).toEqual(200);
     const updatedUser = await getUser();
@@ -116,7 +132,43 @@ describe('/api/logout', () => {
   });
 
   test('Should fail if there is no token', async () => {
-    const response = await request(app.server).post('/api/logout');
+    const response = await request(app.server).post(endpoint);
     expect(response.status).toEqual(401);
+  });
+});
+
+describe('/api/password/change', () => {
+  const endpoint = '/api/password/change';
+  let cookie: string;
+
+  beforeAll(async() => {
+    const user = await getUser();
+    cookie = `access=${TokenUtils.access(user)}`;
+  });
+
+  test('Should fail if old and new passwords are the same', async () => {
+    const response = await request(app.server).put(endpoint).set('Cookie', cookie).send({
+      oldPassword: 'password',
+      newPassword: 'password'
+    });
+    expect(response.status).toEqual(400);
+  });
+
+  test('Should change user password', async () => {
+    const response = await request(app.server).put(endpoint).set('Cookie', cookie).send({
+      oldPassword: 'password',
+      newPassword: 'newPassword'
+    });
+    expect(response.status).toEqual(200);
+    const updatedUser = await getUser();
+    expect(updatedUser.sessions.length).toEqual(0);
+  });
+
+  test('Should fail if password is invalid', async () => {
+    const response = await request(app.server).put(endpoint).set('Cookie', cookie).send({
+      oldPassword: 'wrongPassword',
+      newPassword: 'newPassword'
+    });
+    expect(response.status).toEqual(400);
   });
 });
