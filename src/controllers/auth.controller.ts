@@ -1,4 +1,4 @@
-import { Controller, KoaController, Post, Put, Validate } from 'koa-joi-controllers';
+import { Controller, KoaController, Post, Pre, Put, Validate } from 'koa-joi-controllers';
 import { validation } from './validation';
 import { Context } from 'koa';
 import { LimiterKeys, RateLimiter } from '../rate.limiter/rate.limiter';
@@ -6,8 +6,9 @@ import { User, UserDto } from '../models/user';
 import { UserRepository } from '../repositories/user.repository';
 import { AuthService } from '../services/auth.service';
 import { Transporter } from '../mail/transporter';
-import { Payload, Token, TokenUtils } from '../utils/token.utils';
+import { Token, TokenUtils } from '../utils/token.utils';
 import { Errors } from '../error/errors';
+import { refresh } from '../middleware/middleware';
 
 @Controller('/auth')
 export class AuthController extends KoaController {
@@ -40,59 +41,37 @@ export class AuthController extends KoaController {
     await this.rateLimiter.reset(keys);
   }
 
-  @Post('/token/login')
-  async tokenLogin(ctx: Context) {
-    const refreshToken = ctx.cookies.get(Token.Refresh);
-    if (!refreshToken) {
-      throw Errors.unauthorized('No refresh token cookie included in /tokenLogin request');
-    }
-    const payload = TokenUtils.decode(refreshToken, Token.Refresh) as Payload;
-    const user = await this.userRepository.findById(payload.id);
-    ctx.log.info(`User with id=${user.id} successfully logged in via refresh token`);
+  @Post('/refresh')
+  @Pre(refresh)
+  async refresh(ctx: Context) {
+    const user = await this.userRepository.findById(ctx.user);
+    ctx.log.info(`Refreshing tokens for user with id=${user.id}`);
+    this.validateSession(ctx.session, user.sessions);
     await this.setAuthTokens(ctx, user);
+    await this.authService.removeSession(user.id, ctx.session);
+    ctx.log.info(`User with id=${user.id} successfully refreshed tokens`);
     ctx.status = 200;
     ctx.body = UserDto.from(user);
   }
 
   @Post('/logout')
+  @Pre(refresh)
   async logout(ctx: Context) {
-    const refreshToken = ctx.cookies.get(Token.Refresh);
-    const payload = TokenUtils.decode(refreshToken, Token.Refresh) as Payload;
-    await this.authService.removeSession(payload.id, payload.session);
+    await this.authService.removeSession(ctx.user, ctx.session);
     this.clearAuthTokens(ctx);
     ctx.status = 204;
   }
 
-  @Post('/refresh')
-  async refresh(ctx: Context) {
-    const refreshToken = ctx.cookies.get('refresh');
-    const payload = TokenUtils.decode(refreshToken, Token.Refresh) as Payload;
-    const user = await this.userRepository.findById(payload.id);
-    ctx.log.info(`Refreshing tokens for user with id=${user.id}`);
-    if (user.sessions.includes(payload.session)) {
-      await this.setAuthTokens(ctx, user);
-      await this.authService.removeSession(user.id, payload.session);
-      ctx.log.info('New access and refresh tokens set');
-      ctx.status = 204;
-    } else {
-      throw Errors.forbidden('invalid session');
-    }
-  }
-
   @Post('/invalidate')
+  @Pre(refresh)
   async invalidate(ctx: Context) {
-    const refreshToken = ctx.cookies.get(Token.Refresh);
-    const payload = TokenUtils.decode(refreshToken, Token.Refresh) as Payload;
-    const user = await this.userRepository.findById(payload.id);
+    const user = await this.userRepository.findById(ctx.user);
     ctx.log.info(`Invalidating refresh tokens for user with id=${user.id}`);
-    if (user.sessions.includes(payload.session)) {
-      await this.authService.resetSessions(user.id);
-      this.clearAuthTokens(ctx);
-      ctx.log.info('Tokens successfully invalidated');
-      ctx.status = 204;
-    } else {
-      throw Errors.forbidden('invalid session');
-    }
+    this.validateSession(ctx.session, user.sessions);
+    await this.authService.resetSessions(user.id);
+    this.clearAuthTokens(ctx);
+    ctx.log.info('Tokens successfully invalidated');
+    ctx.status = 204;
   }
 
   @Post('/magic/login/request')
@@ -131,6 +110,12 @@ export class AuthController extends KoaController {
   private clearAuthTokens(ctx: Context) {
     ctx.cookies.set(Token.Access, undefined);
     ctx.cookies.set(Token.Refresh, undefined);
+  }
+
+  private validateSession(session, sessions) {
+    if (!sessions.includes(session)) {
+      throw Errors.forbidden('invalid session');
+    }
   }
 
 }

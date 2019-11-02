@@ -3,7 +3,7 @@ import { validation } from './validation';
 import { Context } from 'koa';
 import { UserDto } from '../models/user';
 import { Token, TokenUtils } from '../utils/token.utils';
-import { requireAccessToken } from '../middleware/middleware';
+import { access } from '../middleware/middleware';
 import { UserService } from '../services/user.service';
 
 @Controller('/user')
@@ -37,7 +37,7 @@ export class UserController extends KoaController {
 
   @Put('/email/change')
   @Validate(validation.emailChange)
-  @Pre(requireAccessToken)
+  @Pre(access)
   async changeEmail(ctx: Context) {
     const {email, password} = ctx.request.body;
     await this.userService.changeEmail(ctx.user, email, password);
@@ -63,16 +63,16 @@ export class UserController extends KoaController {
 
   @Put('/password/change')
   @Validate(validation.passwordChange)
-  @Pre(requireAccessToken)
+  @Pre(access)
   async changePassword(ctx: Context) {
     const {oldPassword, newPassword} = ctx.request.body;
     await this.userService.changePassword(ctx.user, oldPassword, newPassword);
     ctx.status = 204;
   }
 
-  @Delete('/user/delete')
+  @Delete('/delete')
   @Validate(validation.password)
-  @Pre(requireAccessToken)
+  @Pre(access)
   async deleteUser(ctx: Context) {
     const {password} = ctx.request.body;
     await this.userService.deleteUser(ctx.user, password);

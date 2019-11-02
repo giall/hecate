@@ -43,10 +43,10 @@ function requestLogger(logger: Logger) {
 }
 
 // requires an access token to be sent with request, and saves user ID in ctx.user
-async function requireAccessToken(ctx, next) {
-  const accessToken = ctx.cookies.get(Token.Access);
-  if (accessToken) {
-    const payload = TokenUtils.decode(accessToken, Token.Access) as Payload;
+async function access(ctx, next) {
+  const token = ctx.cookies.get(Token.Access);
+  if (token) {
+    const payload = TokenUtils.decode(token, Token.Access) as Payload;
     ctx.user = payload.id;
     await next();
   } else {
@@ -54,6 +54,20 @@ async function requireAccessToken(ctx, next) {
   }
 }
 
+// requires a refresh token to be sent with request
+// saves user ID in ctx.user and session ID in ctx.session
+async function refresh(ctx, next) {
+  const token = ctx.cookies.get(Token.Refresh);
+  if (token) {
+    const payload = TokenUtils.decode(token, Token.Refresh) as Payload;
+    ctx.user = payload.id;
+    ctx.session = payload.session;
+    await next();
+  } else {
+    throw Errors.unauthorized('No refresh token included in request');
+  }
+}
+
 export {
-  requestLogger, ctxLogger, errorHandler, loginRateLimit, requireAccessToken
+  requestLogger, ctxLogger, errorHandler, loginRateLimit, access, refresh
 }

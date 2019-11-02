@@ -6,6 +6,7 @@ import { User } from '../../src/models/user';
 import { properties } from '../../src/properties/properties';
 import { TokenUtils } from '../../src/utils/token.utils';
 import { chance } from '../utils/chance';
+import { v4 as uuid } from 'uuid';
 
 let app: App;
 let mongod: MongoMemoryServer;
@@ -27,6 +28,15 @@ async function getUser(): Promise<User> {
   } catch (err) {
     throw Error('error getting user from database');
   }
+}
+
+async function login() {
+  const response = await request(app.server).post('/api/auth/login')
+    .send({
+      email: userDetails.email,
+      password: userDetails.password
+    });
+  expect(response.status).toEqual(200);
 }
 
 beforeAll(async () => {
@@ -120,10 +130,41 @@ describe('/api/auth/login', () => {
   test('Should fail if user does not exist', async () => {
     const response = await request(app.server).post(endpoint).send({
       email: chance.email(),
-      password: userDetails.password,
+      password: userDetails.password
     });
     expect(response.status).toEqual(401);
     expect(response.header['set-cookie']).toBe(undefined);
+  });
+});
+
+describe('/api/auth/refresh', () => {
+  const endpoint = '/api/auth/refresh';
+  let cookie: string;
+
+  beforeAll(async () => {
+    await login();
+    user = await getUser();
+  });
+
+  test('Should fail if there is no refresh token', async () => {
+    const response = await request(app.server).post(endpoint);
+    expect(response.status).toEqual(401);
+  });
+
+  test('Should fail if session is invalid', async () => {
+    cookie = `refresh=${TokenUtils.refresh(user, uuid())}`;
+    const response = await request(app.server).post(endpoint).set('Cookie', cookie);
+    expect(response.status).toEqual(403);
+  });
+
+  test('Should refresh session successfully', async () => {
+    const [sessionId] = user.sessions;
+    cookie = `refresh=${TokenUtils.refresh(user, sessionId)}`;
+    const response = await request(app.server).post(endpoint).set('Cookie', cookie);
+    expect(response.status).toEqual(200);
+
+    user = await getUser();
+    expect(user.sessions.includes(sessionId)).toBeFalsy();
   });
 });
 
@@ -131,26 +172,54 @@ describe('/api/auth/logout', () => {
   const endpoint = '/api/auth/logout';
 
   beforeAll(async () => {
+    await login();
     user = await getUser();
   });
 
+  test('Should fail if there is no refresh token', async () => {
+    const response = await request(app.server).post(endpoint);
+    expect(response.status).toEqual(401);
+  });
+
   test('Should logout successfully', async () => {
-    const [sessionId] = user.sessions || [];
+    const [sessionId] = user.sessions;
     expect(sessionId).toBeDefined();
     const cookie = `refresh=${TokenUtils.refresh(user, sessionId)}`;
 
     const response = await request(app.server).post(endpoint).set('Cookie', cookie);
-
     expect(response.status).toEqual(204);
+
     const updatedUser = await getUser();
     expect(updatedUser.sessions.includes(sessionId)).toBeFalsy();
   });
+});
 
-  test('Should fail if there is no token', async () => {
+describe('/api/auth/invalidate', () => {
+  const endpoint = '/api/auth/invalidate';
+
+  beforeAll(async () => {
+    await login();
+    user = await getUser();
+  });
+
+  test('Should fail if there is no refresh token', async () => {
     const response = await request(app.server).post(endpoint);
     expect(response.status).toEqual(401);
   });
+
+  test('Should remove all sessions', async () => {
+    const [sessionId] = user.sessions;
+    expect(sessionId).toBeDefined();
+    const cookie = `refresh=${TokenUtils.refresh(user, sessionId)}`;
+
+    const response = await request(app.server).post(endpoint).set('Cookie', cookie);
+    expect(response.status).toEqual(204);
+
+    const updatedUser = await getUser();
+    expect(updatedUser.sessions.length).toEqual(0);
+  });
 });
+
 
 describe('/api/user/password/reset', () => {
   const endpoint = '/api/user/password/reset';
@@ -176,17 +245,9 @@ describe('/api/user/password/reset', () => {
       });
     expect(response.status).toEqual(204);
 
-    const loginEndpoint = '/api/auth/login';
-    const loginResponse = await request(app.server).post(loginEndpoint).send({
-      email: userDetails.email,
-      password: newPassword
-    });
-    expect(loginResponse.status).toEqual(200);
-  });
-
-  afterAll(() => {
     userDetails.password = newPassword;
-  })
+    await login();
+  });
 });
 
 describe('/api/user/password/change', () => {
@@ -196,6 +257,11 @@ describe('/api/user/password/change', () => {
 
   beforeAll(() => {
     cookie = `access=${TokenUtils.access(user)}`;
+  });
+
+  test('Should fail if there is no access token', async () => {
+    const response = await request(app.server).put(endpoint);
+    expect(response.status).toEqual(401);
   });
 
   test('Should fail if old and new passwords are the same', async () => {
@@ -227,17 +293,9 @@ describe('/api/user/password/change', () => {
       });
     expect(response.status).toEqual(204);
 
-    const loginEndpoint = '/api/auth/login';
-    const loginResponse = await request(app.server).post(loginEndpoint).send({
-      email: userDetails.email,
-      password: newPassword
-    });
-    expect(loginResponse.status).toEqual(200);
-  });
-
-  afterAll(() => {
     userDetails.password = newPassword;
-  })
+    await login();
+  });
 });
 
 describe('/api/user/email/verify', () => {
@@ -268,19 +326,9 @@ describe('/api/user/email/change', () => {
     cookie = `access=${TokenUtils.access(user)}`;
   });
 
-  test('Should change user email and unverify', async () => {
-    const newEmail = chance.email();
-    const response = await request(app.server).put(endpoint)
-      .set('Cookie', cookie)
-      .send({
-        email: newEmail,
-        password: userDetails.password
-      });
-    expect(response.status).toEqual(204);
-    const updatedUser = await getUser();
-    expect(updatedUser.email).toEqual(newEmail);
-    userDetails.email = newEmail;
-    expect(updatedUser.verified).toBeFalsy();
+  test('Should fail if there is no access token', async () => {
+    const response = await request(app.server).put(endpoint);
+    expect(response.status).toEqual(401);
   });
 
   test('Should fail if new and old emails are the same', async () => {
@@ -301,5 +349,54 @@ describe('/api/user/email/change', () => {
         password: chance.password()
       });
     expect(response.status).toEqual(400);
+  });
+
+  test('Should change user email and unverify', async () => {
+    const newEmail = chance.email();
+    const response = await request(app.server).put(endpoint)
+      .set('Cookie', cookie)
+      .send({
+        email: newEmail,
+        password: userDetails.password
+      });
+    expect(response.status).toEqual(204);
+    const updatedUser = await getUser();
+    expect(updatedUser.email).toEqual(newEmail);
+    userDetails.email = newEmail;
+    expect(updatedUser.verified).toBeFalsy();
+  });
+});
+
+describe('/api/user/delete', () => {
+  const endpoint = '/api/user/delete';
+  let cookie;
+
+  beforeAll(() => {
+    cookie = `access=${TokenUtils.access(user)}`;
+  });
+
+  test('Should fail if there is no access token', async () => {
+    const response = await request(app.server).delete(endpoint);
+    expect(response.status).toEqual(401);
+  });
+
+  test('Should fail if password is invalid', async () => {
+    const response = await request(app.server).delete(endpoint)
+      .set('Cookie', cookie)
+      .send({
+        password: chance.password()
+      });
+    expect(response.status).toEqual(400);
+  });
+
+  test('Should delete user', async () => {
+    const response = await request(app.server).delete(endpoint)
+      .set('Cookie', cookie)
+      .send({
+        password: userDetails.password
+      });
+    expect(response.status).toEqual(204);
+    const updatedUser = await getUser();
+    expect(updatedUser.email).toBeUndefined();
   });
 });
