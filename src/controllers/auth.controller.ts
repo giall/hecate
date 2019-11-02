@@ -1,18 +1,16 @@
+import { Controller, KoaController, Post, Put, Validate } from 'koa-joi-controllers';
 import { authOptions } from './validation';
-import { Controller, KoaController, Post, Validate, Pre, Put, Json, Delete } from 'koa-joi-controllers';
 import { Context } from 'koa';
-import { AuthService } from '../services/auth.service';
-import { TokenUtils, Token, Payload } from '../utils/token.utils';
-import { UserRepository } from '../repositories/user.repository';
-import { Errors } from '../error/errors';
-import { requireAccessToken } from '../middleware/middleware';
-import { User, UserDto } from '../models/user';
-import { Transporter } from '../mail/transporter';
-import { properties } from '../properties/properties';
 import { LimiterKeys, RateLimiter } from '../rate.limiter/rate.limiter';
+import { User, UserDto } from '../models/user';
+import { UserRepository } from '../repositories/user.repository';
+import { AuthService } from '../services/auth.service';
+import { Transporter } from '../mail/transporter';
+import { Payload, Token, TokenUtils } from '../utils/token.utils';
+import { Errors } from '../error/errors';
 
-@Controller('/api')
-export class ApiController extends KoaController {
+@Controller('/auth')
+export class AuthController extends KoaController {
   userRepository: UserRepository;
   authService: AuthService;
   transporter: Transporter;
@@ -25,19 +23,6 @@ export class ApiController extends KoaController {
     this.authService = authService;
     this.transporter = transporter;
     this.rateLimiter = rateLimiter;
-  }
-
-  @Post('/register')
-  @Validate(authOptions.register)
-  async register(ctx: Context) {
-    const {username, email, password} = ctx.request.body;
-    const user = await this.authService.register({username, email, password});
-    if (properties.options.emailVerificationRequired) {
-      ctx.log.info(`Sending email to ${email} for verification`);
-      await this.transporter.emailVerification(user);
-    }
-    ctx.status = 201;
-    ctx.body = UserDto.from(user);
   }
 
   @Post('/login')
@@ -55,7 +40,7 @@ export class ApiController extends KoaController {
     await this.rateLimiter.reset(keys);
   }
 
-  @Post('/tokenLogin')
+  @Post('/token/login')
   async tokenLogin(ctx: Context) {
     const refreshToken = ctx.cookies.get(Token.Refresh);
     if (!refreshToken) {
@@ -66,12 +51,7 @@ export class ApiController extends KoaController {
     ctx.log.info(`User with id=${user.id} successfully logged in via refresh token`);
     await this.setAuthTokens(ctx, user);
     ctx.status = 200;
-    ctx.body = {
-      username: user.username,
-      email: user.email,
-      role: user.role,
-      verified: user.verified
-    };
+    ctx.body = UserDto.from(user);
   }
 
   @Post('/logout')
@@ -115,65 +95,6 @@ export class ApiController extends KoaController {
     }
   }
 
-  @Put('/email/verify')
-  @Validate(authOptions.token)
-  async verifyEmail(ctx: Context) {
-    const {token} = ctx.request.body;
-    ctx.log.debug(`email verification token: ${token}`);
-    const payload = TokenUtils.decode(token, Token.EmailVerification);
-    ctx.log.info(`Verifying email for user with id=${payload.id}`);
-    const user = await this.userRepository.findById(payload.id);
-    if (user.verified) {
-      throw Errors.gone(`User with id=${payload.id} has already verified their email`);
-    }
-    await this.userRepository.verifyEmail(payload.id);
-    ctx.status = 204;
-  }
-
-  @Put('/email/change')
-  @Validate(authOptions.emailChange)
-  @Pre(requireAccessToken)
-  async changeEmail(ctx: Context) {
-    const {email, password} = ctx.request.body;
-    await this.authService.changeEmail(ctx.user, email, password);
-  }
-
-  @Post('/password/reset/request')
-  @Json()
-  async resetPasswordRequest(ctx: Context) {
-    const email = ctx.body.email;
-    const user = await this.userRepository.find({email});
-    if (user) {
-      ctx.log.info(`Sending password reset email to ${email}`);
-      await this.transporter.passwordReset(user);
-    } else {
-      ctx.log.warn(`Cannot reset password; no account with email ${email}`);
-    }
-    ctx.status = 202;
-  }
-
-  @Put('/password/reset')
-  @Validate(authOptions.passwordChange)
-  async resetPassword(ctx: Context) {
-    const {token, newPassword} = ctx.request.body;
-    const payload = TokenUtils.decode(token, Token.PasswordReset);
-    const user = await this.userRepository.findById(payload.id);
-    if (user.password !== payload.password) {
-      throw Errors.unauthorized(`Current hash for user with id=${payload.id} does not match with the one in the token`);
-    }
-    await this.userRepository.changePassword(payload.id, newPassword);
-    ctx.status = 204;
-  }
-
-  @Put('/password/change')
-  @Validate(authOptions.passwordChange)
-  @Pre(requireAccessToken)
-  async changePassword(ctx: Context) {
-    const {oldPassword, newPassword} = ctx.request.body;
-    await this.authService.changePassword(ctx.user, oldPassword, newPassword);
-    ctx.status = 204;
-  }
-
   @Post('/magic/login/request')
   async magicLoginRequest(ctx: Context) {
     const {email} = ctx.body;
@@ -196,15 +117,6 @@ export class ApiController extends KoaController {
     ctx.body = UserDto.from(user);
   }
 
-  @Delete('/user/delete')
-  @Validate(authOptions.password)
-  @Pre(requireAccessToken)
-  async deleteUser(ctx: Context) {
-    const { password } = ctx.request.body;
-    await this.authService.deleteUser(ctx.user, password);
-    ctx.status = 204;
-  }
-
   private async setAuthTokens(ctx: Context, user: User) {
     const options = {secure: false, httpOnly: false};
 
@@ -220,4 +132,5 @@ export class ApiController extends KoaController {
     ctx.cookies.set(Token.Access, undefined);
     ctx.cookies.set(Token.Refresh, undefined);
   }
+
 }
