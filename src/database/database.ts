@@ -4,12 +4,14 @@ import { properties } from '../properties/properties';
 
 export class Database {
   uri: string;
+  name: string;
 
   client: MongoClient;
   logger: Logger;
 
   constructor(uri: string) {
     this.uri = uri;
+    this.name = properties.mongodb.name;
     this.logger = new Logger();
   }
 
@@ -28,7 +30,6 @@ export class Database {
   }
 
   getCollection(collection: string): Collection {
-    const name = properties.mongodb.name;
-    return this.client.db(name).collection(collection);
+    return this.client.db(this.name).collection(collection);
   }
 }

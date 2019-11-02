@@ -1,4 +1,4 @@
-import { compare, hash } from 'bcrypt';
+import { compare } from 'bcrypt';
 import { UserRepository } from '../repositories/user.repository';
 import { Logger } from '../logger/logger';
 import { Errors } from '../error/errors';

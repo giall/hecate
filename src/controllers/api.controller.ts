@@ -1,13 +1,15 @@
 import { authOptions } from './validation';
-import { Controller, KoaController, Post, Validate, Pre, Put } from 'koa-joi-controllers';
+import { Controller, KoaController, Post, Validate, Pre, Put, Json } from 'koa-joi-controllers';
 import { Context } from 'koa';
 import { AuthService } from '../services/auth.service';
 import { TokenUtils, Token, Payload } from '../utils/token.utils';
 import { UserRepository } from '../repositories/user.repository';
 import { Errors } from '../error/errors';
-import { loginRateLimit, requireAccessToken } from '../middleware/middleware';
+import { requireAccessToken } from '../middleware/middleware';
 import { User, UserDto } from '../models/user';
 import { Transporter } from '../mail/transporter';
+import { properties } from '../properties/properties';
+import { LimiterKeys, RateLimiter } from '../rate.limiter/rate.limiter';
 
 @Controller('/api')
 export class ApiController extends KoaController {
@@ -15,33 +17,43 @@ export class ApiController extends KoaController {
   userRepository: UserRepository;
   authService: AuthService;
   transporter: Transporter;
+  rateLimiter: RateLimiter;
 
-  constructor(userRepository: UserRepository, authService: AuthService, transporter: Transporter) {
+  constructor(userRepository: UserRepository, authService: AuthService,
+              transporter: Transporter, rateLimiter: RateLimiter) {
     super();
     this.userRepository = userRepository;
     this.authService = authService;
     this.transporter = transporter;
+    this.rateLimiter = rateLimiter;
   }
 
   @Post('/register')
   @Validate(authOptions.register)
   async register(ctx: Context) {
-    const { username, email, password } = ctx.request.body;
-    const user = await this.authService.register({ username, email, password });
+    const {username, email, password} = ctx.request.body;
+    const user = await this.authService.register({username, email, password});
+    if (properties.options.emailVerificationRequired) {
+      ctx.log.info(`Sending email to ${email} for verification`);
+      await this.transporter.emailVerification(user);
+    }
     ctx.status = 201;
     ctx.body = UserDto.from(user);
   }
 
   @Post('/login')
-  @Pre(loginRateLimit)
   @Validate(authOptions.login)
   async login(ctx: Context) {
-    const { email, password } = ctx.request.body;
+    const {email, password} = ctx.request.body;
+    const keys: LimiterKeys = {email, ip: ctx.ip};
+    await this.rateLimiter.limit(keys);
+
     const user = await this.authService.login(email, password);
     ctx.log.info(`User with id=${user.id} successfully logged in`);
     await this.setAuthTokens(ctx, user);
     ctx.status = 200;
     ctx.body = UserDto.from(user);
+    await this.rateLimiter.reset(keys);
   }
 
   @Post('/tokenLogin')
@@ -60,7 +72,7 @@ export class ApiController extends KoaController {
       email: user.email,
       role: user.role,
       verified: user.verified
-    }
+    };
   }
 
   @Post('/logout')
@@ -105,26 +117,28 @@ export class ApiController extends KoaController {
   }
 
   @Put('/email/verify')
+  @Validate(authOptions.token)
   async verifyEmail(ctx: Context) {
-    const token = ctx.query.token;
+    const {token} = ctx.request.body;
+    ctx.log.debug(`email verification token: ${token}`);
     const payload = TokenUtils.decode(token, Token.EmailVerification);
+    ctx.log.info(`Verifying email for user with id=${payload.id}`);
     const user = await this.userRepository.findById(payload.id);
     if (user.verified) {
-      throw Errors.badRequest(`User with id=${payload.id} has already verified their email`);
+      throw Errors.gone(`User with id=${payload.id} has already verified their email`);
     }
     await this.userRepository.verifyEmail(payload.id);
     ctx.status = 200;
   }
 
-  @Put('/password/reset')
+  @Post('/password/reset')
+  @Json()
   async resetPassword(ctx: Context) {
-    const email = 'giallouros.christos@outlook.com'; // {} ctx.body.email
+    const email = ctx.body.email;
     const user = await this.userRepository.find({email});
     if (user) {
-      const token = TokenUtils.passwordReset(user);
-      // send email with token in reset link
       ctx.log.info(`Sending password reset email to ${email}`);
-      await this.transporter.passwordReset(email);
+      await this.transporter.passwordReset(user);
     } else {
       ctx.log.warn(`Cannot reset password; no account with email ${email}`);
     }
@@ -135,7 +149,7 @@ export class ApiController extends KoaController {
   @Pre(requireAccessToken)
   @Validate(authOptions.passwordChange)
   async changePassword(ctx: Context) {
-    const { oldPassword, newPassword } = ctx.request.body;
+    const {oldPassword, newPassword} = ctx.request.body;
     await this.authService.changePassword(ctx.user, oldPassword, newPassword);
     ctx.status = 200;
   }
@@ -143,7 +157,7 @@ export class ApiController extends KoaController {
   @Put('/password/change')
   @Validate(authOptions.passwordChange)
   async changePassword2(ctx: Context) {
-    const { token, newPassword } = ctx.request.body;
+    const {token, newPassword} = ctx.request.body;
     const payload = TokenUtils.decode(token, Token.PasswordReset);
     const user = await this.userRepository.findById(payload.id);
     if (user.password !== payload.password) {
@@ -155,8 +169,8 @@ export class ApiController extends KoaController {
 
   @Post('/temp/login/request')
   async tempLoginReq(ctx: Context) {
-    const { email } = ctx.body;
-    const user = await this.userRepository.find({ email });
+    const {email} = ctx.body;
+    const user = await this.userRepository.find({email});
     const token = TokenUtils.tempLogin(user);
     // await this.transporter.tempLogin(email)
     ctx.status = 202;
@@ -164,15 +178,19 @@ export class ApiController extends KoaController {
 
   @Put('/temp/login')
   async tempLogin(ctx: Context) {
-    const { token } = ctx.request.body;
+    const {token} = ctx.request.body;
     const payload = TokenUtils.decode(token, Token.TempLogin);
     const user = await this.userRepository.findById(payload.id);
+    if (user.sessions.includes(payload.session)) {
+      throw Errors.gone('temp login token has already been used');
+    }
+    // add session id manually
     this.setAuthTokens(ctx, user);
     ctx.status = 200;
   }
 
   private async setAuthTokens(ctx: Context, user: User) {
-    const options = { secure: false, httpOnly: false };
+    const options = {secure: false, httpOnly: false};
 
     const accessToken = TokenUtils.access(user);
     ctx.cookies.set(Token.Access, accessToken, options);

@@ -6,7 +6,7 @@ const credentials = {
   password: Validator.Joi.string()
     .min(8).max(30)
     .required()
-}
+};
 
 const login: ValidationOptions = {
   type: 'json',
@@ -32,8 +32,15 @@ const passwordChange: ValidationOptions = {
     oldPassword: credentials.password,
     newPassword: credentials.password
   }
-}
+};
+
+const token: ValidationOptions = {
+  type: 'json',
+  body: {
+    token: Validator.Joi.string()
+  }
+};
 
 export const authOptions = {
-  login, register, passwordChange
-}
+  login, register, passwordChange, token
+};

@@ -12,6 +12,8 @@ import { Logger } from './logger/logger';
 import { ctxLogger, errorHandler, requestLogger } from './middleware/middleware';
 import { Middleware } from 'koa';
 import { Transporter } from './mail/transporter';
+import { RateLimiter } from './rate.limiter/rate.limiter';
+import { MongoMemoryServer } from 'mongodb-memory-server-core';
 
 export class App {
   server: Server;
@@ -52,8 +54,9 @@ export class App {
     const userRepository = new UserRepository(this.database);
     const authService = new AuthService(userRepository);
     const transporter = new Transporter();
+    const rateLimiter = new RateLimiter(this.database, this.logger);
     return [
-      new ApiController(userRepository, authService, transporter)
+      new ApiController(userRepository, authService, transporter, rateLimiter)
     ];
   }
 }

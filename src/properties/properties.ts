@@ -1,4 +1,5 @@
 import { config } from 'dotenv';
+
 config();
 
 export const properties = {
@@ -27,5 +28,24 @@ export const properties = {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS
     }
+  },
+  limiter: {
+    retry: {
+      attempts: 5,
+      interval: 15 * 60 // 15 minutes
+    }
+  },
+  app: {
+    name: 'Hecate'
+  },
+  web: {
+    host: 'http://localhost:4200',
+    endpoints: {
+      emailVerification: 'verify',
+      passwordReset: 'reset'
+    }
+  },
+  options: {
+    emailVerificationRequired: false
   }
-}
+};

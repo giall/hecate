@@ -1,5 +1,5 @@
 import { Logger } from '../logger/logger';
-import { RateLimiterMemory } from 'rate-limiter-flexible';
+import {RateLimiterMemory, RateLimiterMongo} from 'rate-limiter-flexible';
 import { Errors } from '../error/errors';
 
 import * as koaLogger from 'koa-logger';
@@ -22,7 +22,7 @@ async function errorHandler(ctx, next) {
     }
     else ctx.log.warn(err);
   }
-};
+}
 
 const rateLimiter = new RateLimiterMemory({
   points: 20,
@@ -30,11 +30,7 @@ const rateLimiter = new RateLimiterMemory({
 });
 
 async function loginRateLimit(ctx, next) {
-  try {
-    await rateLimiter.consume(ctx.ip);
-  } catch (err) {
-    throw Errors.tooManyRequests();
-  }
+  ctx.rateLimiter = rateLimiter;
   await next();
 }
 

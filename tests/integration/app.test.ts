@@ -1,43 +1,46 @@
 import * as request from 'supertest';
-import { App } from '../../src/app';
-import { Database } from '../../src/database/database';
-import { MongoMemoryServer } from 'mongodb-memory-server';
-import { User } from '../../src/models/user';
-import { properties } from '../../src/properties/properties';
-import { TokenUtils } from '../../src/utils/token.utils';
+import {App} from '../../src/app';
+import {Database} from '../../src/database/database';
+import {MongoMemoryServer} from 'mongodb-memory-server';
+import {User} from '../../src/models/user';
+import {properties} from '../../src/properties/properties';
+import {TokenUtils} from '../../src/utils/token.utils';
 
 let app: App;
 let mongod: MongoMemoryServer;
-let dbUri: string;
-let dbName: string;
 let database: Database;
 
 let user: User;
 
 async function getUser(): Promise<User> {
-  const users = await database.getCollection('users').find({username: 'TESTUSER'}).toArray();
-  return User.from(users[0]);
+  try {
+    const users = await database.getCollection('users').find({username: 'TESTUSER'}).toArray();
+    return User.from(users[0]);
+  } catch (err) {
+    throw Error('error getting user from database');
+  }
 }
 
 beforeAll(async () => {
   properties.logging.level = 'test';
+  properties.options.emailVerificationRequired = false;
   mongod = new MongoMemoryServer({
     instance: {
-      dbName
+      dbName: 'hecate'
     }
   });
-  dbUri = await mongod.getConnectionString();
+  const dbUri = await mongod.getConnectionString();
   database = new Database(dbUri);
   app = new App(database);
   await app.bootstrap();
 
   await request(app.server)
-      .post('/api/register')
-      .send({
-        username: 'TESTUSER',
-        email: 'test@email.com',
-        password: 'password'
-      });
+    .post('/api/register')
+    .send({
+      username: 'TESTUSER',
+      email: 'test@email.com',
+      password: 'password'
+    });
   user = await getUser();
 });
 
@@ -122,10 +125,11 @@ describe('/api/logout', () => {
   const endpoint = '/api/logout';
 
   test('Should logout successfully', async () => {
-    const cookie = `refresh=${TokenUtils.refresh(user, user.sessions[0])}`;;
-    
+    const cookie = `refresh=${TokenUtils.refresh(user, user.sessions[0])}`;
+    ;
+
     const response = await request(app.server).post(endpoint).set('Cookie', cookie);
-    
+
     expect(response.status).toEqual(200);
     const updatedUser = await getUser();
     expect(updatedUser.sessions.length).toEqual(0);
@@ -141,7 +145,7 @@ describe('/api/password/change', () => {
   const endpoint = '/api/password/change';
   let cookie: string;
 
-  beforeAll(async() => {
+  beforeAll(async () => {
     const user = await getUser();
     cookie = `access=${TokenUtils.access(user)}`;
   });
@@ -170,5 +174,25 @@ describe('/api/password/change', () => {
       newPassword: 'newPassword'
     });
     expect(response.status).toEqual(400);
+  });
+});
+
+describe('/api/email/verify', () => {
+  const endpoint = '/api/email/verify';
+
+  test('Should verify user', async () => {
+    const response = await request(app.server).put(endpoint).send({
+      token: TokenUtils.emailVerification(await getUser())
+    });
+    expect(response.status).toEqual(200);
+    const user = await getUser();
+    expect(user.verified).toBeTruthy();
+  });
+
+  test('Should fail if user is already verified', async () => {
+    const response = await request(app.server).put(endpoint).send({
+      token: TokenUtils.emailVerification(await getUser())
+    });
+    expect(response.status).toEqual(410);
   });
 });

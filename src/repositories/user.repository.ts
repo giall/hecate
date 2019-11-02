@@ -1,6 +1,6 @@
 import { Database } from '../database/database';
 import { Collection, ObjectId } from 'mongodb';
-import { User, Credentials } from '../models/user';
+import { User } from '../models/user';
 import { hash } from 'bcrypt';
 
 export class UserRepository {
