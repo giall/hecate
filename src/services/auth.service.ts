@@ -64,16 +64,30 @@ export class AuthService {
     return this.userRepository.updateSessions(userId, []);
   }
 
+  async changeEmail(userId: string, email: string, password: string) {
+    await this.verifyPassword(userId, password);
+    await this.userRepository.changeEmail(userId, email);
+  }
+
   async changePassword(userId: string, oldPassword: string, newPassword: string) {
     if (oldPassword === newPassword) {
       throw Errors.badRequest('Old and new passwords are the same');
     }
+    await this.verifyPassword(userId, oldPassword);
+    this.logger.info(`Changing password for userId=${userId}`);
+    await this.userRepository.changePassword(userId, newPassword);
+  }
+
+  async deleteUser(userId: string, password: string) {
+    await this.verifyPassword(userId, password);
+    await this.userRepository.remove(userId);
+  }
+
+  private async verifyPassword(userId: string, password: string) {
     const user = await this.userRepository.findById(userId);
-    const success = await compare(oldPassword, user.password);
+    const success = await compare(password, user.password);
     if (!success) {
       throw Errors.badRequest('Invalid password');
     }
-    this.logger.info(`Changing password for userId=${userId}`);
-    await this.userRepository.changePassword(userId, newPassword);
   }
 }

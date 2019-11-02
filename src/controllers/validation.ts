@@ -34,6 +34,20 @@ const passwordChange: ValidationOptions = {
   }
 };
 
+const emailChange: ValidationOptions = {
+  type: 'json',
+  body: {
+    ...credentials,
+  }
+};
+
+const password: ValidationOptions = {
+  type: 'json',
+  body: {
+    password: credentials.password
+  }
+};
+
 const token: ValidationOptions = {
   type: 'json',
   body: {
@@ -42,5 +56,5 @@ const token: ValidationOptions = {
 };
 
 export const authOptions = {
-  login, register, passwordChange, token
+  login, register, passwordChange, emailChange, password, token
 };

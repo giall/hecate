@@ -15,7 +15,7 @@ export enum Token {
   Refresh = 'refresh',
   EmailVerification = 'emailVerification',
   PasswordReset = 'passwordReset',
-  TempLogin = 'tempLogin'
+  MagicLogin = 'magicLogin'
 }
 
 export class TokenUtils {
@@ -42,9 +42,9 @@ export class TokenUtils {
     return this.token({ id, password }, Token.PasswordReset);
   }
 
-  static tempLogin(user: User) {
+  static magicLogin(user: User) {
     const { id } = user;
-    return this.token({ id }, Token.TempLogin);
+    return this.token({ id }, Token.MagicLogin);
   }
 
   static decode(token: string, type: Token) {
@@ -60,13 +60,13 @@ export class TokenUtils {
     return payload;
   }
 
-  private static token(data: {id: string; session?: string, password?: string}, type: Token): string {
+  private static token(data: {id: string; session?: string; password?: string}, type: Token): string {
     const options = {
       expiresIn: properties.jwt.expirations[type]
-    }
+    };
     const payload: Payload = {
       ...data, type
-    }
+    };
     return sign(payload, this.secret, options);
   }
 }

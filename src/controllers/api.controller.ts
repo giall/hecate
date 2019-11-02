@@ -1,5 +1,5 @@
 import { authOptions } from './validation';
-import { Controller, KoaController, Post, Validate, Pre, Put, Json } from 'koa-joi-controllers';
+import { Controller, KoaController, Post, Validate, Pre, Put, Json, Delete } from 'koa-joi-controllers';
 import { Context } from 'koa';
 import { AuthService } from '../services/auth.service';
 import { TokenUtils, Token, Payload } from '../utils/token.utils';
@@ -13,14 +13,13 @@ import { LimiterKeys, RateLimiter } from '../rate.limiter/rate.limiter';
 
 @Controller('/api')
 export class ApiController extends KoaController {
-
   userRepository: UserRepository;
   authService: AuthService;
   transporter: Transporter;
   rateLimiter: RateLimiter;
 
   constructor(userRepository: UserRepository, authService: AuthService,
-              transporter: Transporter, rateLimiter: RateLimiter) {
+    transporter: Transporter, rateLimiter: RateLimiter) {
     super();
     this.userRepository = userRepository;
     this.authService = authService;
@@ -81,7 +80,7 @@ export class ApiController extends KoaController {
     const payload = TokenUtils.decode(refreshToken, Token.Refresh) as Payload;
     await this.authService.removeSession(payload.id, payload.session);
     this.clearAuthTokens(ctx);
-    ctx.status = 200;
+    ctx.status = 204;
   }
 
   @Post('/refresh')
@@ -94,7 +93,7 @@ export class ApiController extends KoaController {
       await this.setAuthTokens(ctx, user);
       await this.authService.removeSession(user.id, payload.session);
       ctx.log.info('New access and refresh tokens set');
-      ctx.status = 200;
+      ctx.status = 204;
     } else {
       throw Errors.forbidden('invalid session');
     }
@@ -110,7 +109,7 @@ export class ApiController extends KoaController {
       await this.authService.resetSessions(user.id);
       this.clearAuthTokens(ctx);
       ctx.log.info('Tokens successfully invalidated');
-      ctx.status = 200;
+      ctx.status = 204;
     } else {
       throw Errors.forbidden('invalid session');
     }
@@ -128,12 +127,20 @@ export class ApiController extends KoaController {
       throw Errors.gone(`User with id=${payload.id} has already verified their email`);
     }
     await this.userRepository.verifyEmail(payload.id);
-    ctx.status = 200;
+    ctx.status = 204;
   }
 
-  @Post('/password/reset')
+  @Put('/email/change')
+  @Validate(authOptions.emailChange)
+  @Pre(requireAccessToken)
+  async changeEmail(ctx: Context) {
+    const {email, password} = ctx.request.body;
+    await this.authService.changeEmail(ctx.user, email, password);
+  }
+
+  @Post('/password/reset/request')
   @Json()
-  async resetPassword(ctx: Context) {
+  async resetPasswordRequest(ctx: Context) {
     const email = ctx.body.email;
     const user = await this.userRepository.find({email});
     if (user) {
@@ -145,18 +152,9 @@ export class ApiController extends KoaController {
     ctx.status = 202;
   }
 
-  @Put('/password/change')
-  @Pre(requireAccessToken)
+  @Put('/password/reset')
   @Validate(authOptions.passwordChange)
-  async changePassword(ctx: Context) {
-    const {oldPassword, newPassword} = ctx.request.body;
-    await this.authService.changePassword(ctx.user, oldPassword, newPassword);
-    ctx.status = 200;
-  }
-
-  @Put('/password/change')
-  @Validate(authOptions.passwordChange)
-  async changePassword2(ctx: Context) {
+  async resetPassword(ctx: Context) {
     const {token, newPassword} = ctx.request.body;
     const payload = TokenUtils.decode(token, Token.PasswordReset);
     const user = await this.userRepository.findById(payload.id);
@@ -164,22 +162,30 @@ export class ApiController extends KoaController {
       throw Errors.unauthorized(`Current hash for user with id=${payload.id} does not match with the one in the token`);
     }
     await this.userRepository.changePassword(payload.id, newPassword);
-    ctx.status = 200;
+    ctx.status = 204;
   }
 
-  @Post('/temp/login/request')
-  async tempLoginReq(ctx: Context) {
+  @Put('/password/change')
+  @Validate(authOptions.passwordChange)
+  @Pre(requireAccessToken)
+  async changePassword(ctx: Context) {
+    const {oldPassword, newPassword} = ctx.request.body;
+    await this.authService.changePassword(ctx.user, oldPassword, newPassword);
+    ctx.status = 204;
+  }
+
+  @Post('/magic/login/request')
+  async magicLoginRequest(ctx: Context) {
     const {email} = ctx.body;
     const user = await this.userRepository.find({email});
-    const token = TokenUtils.tempLogin(user);
-    // await this.transporter.tempLogin(email)
+    await this.transporter.tempLogin(user);
     ctx.status = 202;
   }
 
-  @Put('/temp/login')
-  async tempLogin(ctx: Context) {
-    const {token} = ctx.request.body;
-    const payload = TokenUtils.decode(token, Token.TempLogin);
+  @Put('/magic/login')
+  async magicLogin(ctx: Context) {
+    const { token } = ctx.request.body;
+    const payload = TokenUtils.decode(token, Token.MagicLogin);
     const user = await this.userRepository.findById(payload.id);
     if (user.sessions.includes(payload.session)) {
       throw Errors.gone('temp login token has already been used');
@@ -187,6 +193,16 @@ export class ApiController extends KoaController {
     // add session id manually
     this.setAuthTokens(ctx, user);
     ctx.status = 200;
+    ctx.body = UserDto.from(user);
+  }
+
+  @Delete('/user/delete')
+  @Validate(authOptions.password)
+  @Pre(requireAccessToken)
+  async deleteUser(ctx: Context) {
+    const { password } = ctx.request.body;
+    await this.authService.deleteUser(ctx.user, password);
+    ctx.status = 204;
   }
 
   private async setAuthTokens(ctx: Context, user: User) {

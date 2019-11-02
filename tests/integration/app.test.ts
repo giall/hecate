@@ -130,7 +130,7 @@ describe('/api/logout', () => {
 
     const response = await request(app.server).post(endpoint).set('Cookie', cookie);
 
-    expect(response.status).toEqual(200);
+    expect(response.status).toEqual(204);
     const updatedUser = await getUser();
     expect(updatedUser.sessions.length).toEqual(0);
   });
@@ -163,7 +163,7 @@ describe('/api/password/change', () => {
       oldPassword: 'password',
       newPassword: 'newPassword'
     });
-    expect(response.status).toEqual(200);
+    expect(response.status).toEqual(204);
     const updatedUser = await getUser();
     expect(updatedUser.sessions.length).toEqual(0);
   });
@@ -184,7 +184,7 @@ describe('/api/email/verify', () => {
     const response = await request(app.server).put(endpoint).send({
       token: TokenUtils.emailVerification(await getUser())
     });
-    expect(response.status).toEqual(200);
+    expect(response.status).toEqual(204);
     const user = await getUser();
     expect(user.verified).toBeTruthy();
   });

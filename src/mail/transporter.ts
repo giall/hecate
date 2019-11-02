@@ -48,4 +48,22 @@ export class Transporter {
       Thank you,<br/>The ${appName} Team`
     });
   }
+
+  async tempLogin(user: User) {
+    const token = TokenUtils.magicLogin(user);
+    const magicLoginUrl = `${properties.web.host}/${properties.web.endpoints.magicLogin}?token=${token}`;
+    const appName = properties.app.name;
+    await this.transporter.sendMail({
+      from: `"${appName}" <hello@giall.dev>`,
+      to: user.email,
+      subject: `Sign in to ${appName}`,
+      text: `Hi ${user.username},\n\nYou can sign in to your account by following this link: ${magicLoginUrl}
+      \n\nThe link can only be used once will expire in 5 minutes.
+      \n\nThank you,\nThe ${appName} Team`,
+      html: `Hi ${appName}, <b>${user.username}</b>,<br/><br/>
+        You can sign in to your account by <a href="${magicLoginUrl}">following this link</a>.<br/><br/>
+        The link can only be used once will expire in 5 minutes.<br/><br/>
+        Thank you,<br/>The ${appName} Team`
+    });
+  }
 }

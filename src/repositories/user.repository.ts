@@ -12,7 +12,7 @@ export class UserRepository {
   }
 
   async findById(id: string): Promise<User> {
-    const entity = await this.collection.findOne({ _id: new ObjectId(id) });
+    const entity = await this.collection.findOne(this.getFilter(id));
     return entity && User.from(entity);
   }
 
@@ -26,21 +26,35 @@ export class UserRepository {
     return result.ops[0] as User;
   }
 
+  async remove(id: string) {
+    return this.collection.deleteOne(this.getFilter(id));
+  }
+
   async changePassword(id: string, password: string) {
-    return this.collection.updateOne({ _id: new ObjectId(id) }, {
+    return this.collection.updateOne(this.getFilter(id), {
       $set: { password: await hash(password, 10) }
     });
   }
 
+  async changeEmail(id: string, email: string) {
+    return this.collection.updateOne(this.getFilter(id), {
+      $set: { email }
+    });
+  }
+
   async verifyEmail(id: string) {
-    return this.collection.updateOne({ _id: new ObjectId(id) }, {
+    return this.collection.updateOne(this.getFilter(id), {
       $set: { verified: true }
     });
   }
 
   async updateSessions(id: string, sessions: string[]) {
-    return this.collection.updateOne({ _id: new ObjectId(id) }, {
+    return this.collection.updateOne(this.getFilter(id), {
       $set: { sessions }
     });
+  }
+
+  private getFilter(id: string) {
+    return { _id: new ObjectId(id) };
   }
 }

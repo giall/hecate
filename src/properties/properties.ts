@@ -13,7 +13,7 @@ export const properties = {
       refresh: '5m',
       emailVerification: '60m',
       passwordReset: '60m',
-      tempLogin: '5m'
+      magicLogin: '5m'
     }
   },
   mongodb: {
@@ -42,7 +42,8 @@ export const properties = {
     host: 'http://localhost:4200',
     endpoints: {
       emailVerification: 'verify',
-      passwordReset: 'reset'
+      passwordReset: 'reset',
+      magicLogin: 'one.time/login'
     }
   },
   options: {
