@@ -35,7 +35,7 @@ beforeAll(async () => {
   await app.bootstrap();
 
   await request(app.server)
-    .post('/api/register')
+    .post('/api/user/register')
     .send({
       username: 'TESTUSER',
       email: 'test@email.com',
@@ -49,8 +49,8 @@ afterAll(async () => {
   await mongod.stop();
 });
 
-describe('/api/register', () => {
-  const endpoint = '/api/register';
+describe('/api/user/register', () => {
+  const endpoint = '/api/user/register';
 
   test('Should register user successfully', async () => {
     const response = await request(app.server)
@@ -86,8 +86,8 @@ describe('/api/register', () => {
   });
 });
 
-describe('/api/login', () => {
-  const endpoint = '/api/login';
+describe('/api/auth/login', () => {
+  const endpoint = '/api/auth/login';
 
   test('Should be successful', async () => {
     const response = await request(app.server).post(endpoint).send({
@@ -121,8 +121,8 @@ describe('/api/login', () => {
   });
 });
 
-describe('/api/logout', () => {
-  const endpoint = '/api/logout';
+describe('/api/auth/logout', () => {
+  const endpoint = '/api/auth/logout';
 
   test('Should logout successfully', async () => {
     const cookie = `refresh=${TokenUtils.refresh(user, user.sessions[0])}`;
@@ -141,8 +141,8 @@ describe('/api/logout', () => {
   });
 });
 
-describe('/api/password/change', () => {
-  const endpoint = '/api/password/change';
+describe('/api/user/password/change', () => {
+  const endpoint = '/api/user/password/change';
   let cookie: string;
 
   beforeAll(async () => {
@@ -177,8 +177,8 @@ describe('/api/password/change', () => {
   });
 });
 
-describe('/api/email/verify', () => {
-  const endpoint = '/api/email/verify';
+describe('/api/user/email/verify', () => {
+  const endpoint = '/api/user/email/verify';
 
   test('Should verify user', async () => {
     const response = await request(app.server).put(endpoint).send({

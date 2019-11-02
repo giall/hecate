@@ -7,13 +7,14 @@ import { configureRoutes, KoaController } from 'koa-joi-controllers';
 import { Database } from './database/database';
 import { UserRepository } from './repositories/user.repository';
 import { AuthService } from './services/auth.service';
-import { ApiController } from './controllers/api.controller';
 import { Logger } from './logger/logger';
 import { ctxLogger, errorHandler, requestLogger } from './middleware/middleware';
 import { Middleware } from 'koa';
 import { Transporter } from './mail/transporter';
 import { RateLimiter } from './rate.limiter/rate.limiter';
-import { MongoMemoryServer } from 'mongodb-memory-server-core';
+import { AuthController } from './controllers/auth.controller';
+import { UserController } from './controllers/user.controller';
+import { UserService } from './services/user.service';
 
 export class App {
   server: Server;
@@ -33,7 +34,7 @@ export class App {
       requestLogger(this.logger), ctxLogger(this.logger), errorHandler, cors(), helmet()
     ]);
 
-    configureRoutes(app, this.controllers());
+    configureRoutes(app, this.controllers(), '/api');
 
     const port = process.env.NODE_PORT || 3000;
     this.server = app.listen(port);
@@ -53,10 +54,12 @@ export class App {
   private controllers(): KoaController[] {
     const userRepository = new UserRepository(this.database);
     const authService = new AuthService(userRepository);
+    const userService = new UserService(userRepository);
     const transporter = new Transporter();
     const rateLimiter = new RateLimiter(this.database, this.logger);
     return [
-      new ApiController(userRepository, authService, transporter, rateLimiter)
+      new AuthController(userRepository, authService, transporter, rateLimiter),
+      new UserController(userRepository, userService, transporter)
     ];
   }
 }
