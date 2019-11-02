@@ -1,5 +1,5 @@
-import { Controller, Delete, Json, KoaController, Post, Pre, Put, Validate } from 'koa-joi-controllers';
-import { validation } from './validation';
+import { Controller, Delete, KoaController, Post, Pre, Put, Validate } from 'koa-joi-controllers';
+import { Field, params } from './validation';
 import { Context } from 'koa';
 import { UserDto } from '../models/user';
 import { Token, TokenUtils } from '../utils/token.utils';
@@ -16,7 +16,11 @@ export class UserController extends KoaController {
   }
 
   @Post('/register')
-  @Validate(validation.register)
+  @Validate(params({
+    email: Field.Email,
+    username: Field.Username,
+    password: Field.Password
+  }))
   async register(ctx: Context) {
     const {username, email, password} = ctx.request.body;
     const user = await this.userService.register({username, email, password});
@@ -25,7 +29,9 @@ export class UserController extends KoaController {
   }
 
   @Put('/email/verify')
-  @Validate(validation.token)
+  @Validate(params({
+    token: Field.Token
+  }))
   async verifyEmail(ctx: Context) {
     const {token} = ctx.request.body;
     ctx.log.debug(`email verification token: ${token}`);
@@ -36,7 +42,10 @@ export class UserController extends KoaController {
   }
 
   @Put('/email/change')
-  @Validate(validation.emailAndPassword)
+  @Validate(params({
+    email: Field.Email,
+    password: Field.Password
+  }))
   @Pre(access)
   async changeEmail(ctx: Context) {
     const {email, password} = ctx.request.body;
@@ -45,7 +54,9 @@ export class UserController extends KoaController {
   }
 
   @Post('/password/reset/request')
-  @Validate(validation.email)
+  @Validate(params({
+    email: Field.Email
+  }))
   async resetPasswordRequest(ctx: Context) {
     const {email} = ctx.body;
     await this.userService.resetPasswordRequest(email);
@@ -53,7 +64,10 @@ export class UserController extends KoaController {
   }
 
   @Put('/password/reset')
-  @Validate(validation.passwordReset)
+  @Validate(params({
+    token: Field.Token,
+    newPassword: Field.Password
+  }))
   async resetPassword(ctx: Context) {
     const {token, newPassword} = ctx.request.body;
     const payload = TokenUtils.decode(token, Token.PasswordReset);
@@ -62,7 +76,10 @@ export class UserController extends KoaController {
   }
 
   @Put('/password/change')
-  @Validate(validation.passwordChange)
+  @Validate(params({
+    oldPassword: Field.Password,
+    newPassword: Field.Password
+  }))
   @Pre(access)
   async changePassword(ctx: Context) {
     const {oldPassword, newPassword} = ctx.request.body;
@@ -71,7 +88,9 @@ export class UserController extends KoaController {
   }
 
   @Delete('/delete')
-  @Validate(validation.password)
+  @Validate(params({
+    password: Field.Password
+  }))
   @Pre(access)
   async deleteUser(ctx: Context) {
     const {password} = ctx.request.body;

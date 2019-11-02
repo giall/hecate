@@ -1,5 +1,5 @@
 import { Controller, KoaController, Post, Pre, Put, Validate } from 'koa-joi-controllers';
-import { validation } from './validation';
+import { Field, params } from './validation';
 import { Context } from 'koa';
 import { LimiterKeys, RateLimiter } from '../rate.limiter/rate.limiter';
 import { User, UserDto } from '../models/user';
@@ -27,7 +27,10 @@ export class AuthController extends KoaController {
   }
 
   @Post('/login')
-  @Validate(validation.credentials)
+  @Validate(params({
+    email: Field.Password,
+    password: Field.Password
+  }))
   async login(ctx: Context) {
     const {email, password} = ctx.request.body;
     const keys: LimiterKeys = {email, ip: ctx.ip};
@@ -83,7 +86,9 @@ export class AuthController extends KoaController {
   }
 
   @Post('/magic/login')
-  @Validate(validation.token)
+  @Validate(params({
+    token: Field.Token
+  }))
   async magicLogin(ctx: Context) {
     const {token} = ctx.request.body;
     const payload = TokenUtils.decode(token, Token.MagicLogin);
