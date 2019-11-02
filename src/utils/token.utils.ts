@@ -7,7 +7,7 @@ export interface Payload {
   type: Token;
   id: string;
   session?: string; // used by refresh token
-  password?: string; // used by password reset token
+  hash?: string; // used by password reset token
 }
 
 export enum Token {
@@ -38,8 +38,8 @@ export class TokenUtils {
   }
 
   static passwordReset(user: User) {
-    const { id, password } = user;
-    return this.token({ id, password }, Token.PasswordReset);
+    const { id, hash } = user;
+    return this.token({ id, hash }, Token.PasswordReset);
   }
 
   static magicLogin(user: User) {
@@ -60,7 +60,7 @@ export class TokenUtils {
     return payload;
   }
 
-  private static token(data: {id: string; session?: string; password?: string}, type: Token): string {
+  private static token(data: {id: string; session?: string; hash?: string}, type: Token): string {
     const options = {
       expiresIn: properties.jwt.expirations[type]
     };

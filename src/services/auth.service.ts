@@ -17,7 +17,7 @@ export class AuthService {
   async login(email: string, password: string): Promise<User> {
     const user = await this.userRepository.find({email});
     // do comparison even if user does not exist to prevent timing attacks
-    const hash = user && user.password || '.';
+    const hash = user && user.hash || '.';
     const success = await compare(password, hash);
     if (!user) {
       throw Errors.unauthorized(`User with email ${email} does not exist`);

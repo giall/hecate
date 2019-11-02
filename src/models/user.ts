@@ -9,7 +9,7 @@ export enum Role {
 export class User {
   _id?: ObjectId;
   username: string;
-  password: string;
+  hash: string;
   email: string;
   role: Role;
   verified: boolean;
@@ -31,7 +31,7 @@ export class User {
     return new User({
       username: credentials.username,
       email: credentials.email,
-      password: hashSync(credentials.password, 10),
+      hash: hashSync(credentials.password, 10),
       role: Role.User,
       verified: false,
       sessions: []
