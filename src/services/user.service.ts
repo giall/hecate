@@ -2,7 +2,7 @@ import { UserRepository } from '../repositories/user.repository';
 import { Logger } from '../logger/logger';
 import { Credentials, User } from '../models/user';
 import { Errors } from '../error/errors';
-import { compare } from 'bcrypt';
+import { compareSync } from 'bcrypt';
 import { Transporter } from '../mail/transporter';
 import { properties } from '../properties/properties';
 
@@ -37,8 +37,13 @@ export class UserService {
   }
 
   async changeEmail(userId: string, email: string, password: string) {
-    await this.verifyPassword(userId, password);
+    const user = await this.userRepository.findById(userId);
+    if (user.email === email) {
+      throw Errors.badRequest('Old and new email addresses are the same');
+    }
+    this.verifyPassword(user, password);
     await this.userRepository.changeEmail(userId, email);
+    this.sendVerificationEmail(user);
   }
 
   async resetPassword(userId: string, hash: string, newPassword: string) {
@@ -63,13 +68,15 @@ export class UserService {
     if (oldPassword === newPassword) {
       throw Errors.badRequest('Old and new passwords are the same');
     }
-    await this.verifyPassword(userId, oldPassword);
+    const user = await this.userRepository.findById(userId);
+    this.verifyPassword(user, oldPassword);
     this.logger.info(`Changing password for userId=${userId}`);
     await this.userRepository.changePassword(userId, newPassword);
   }
 
   async deleteUser(userId: string, password: string) {
-    await this.verifyPassword(userId, password);
+    const user = await this.userRepository.findById(userId);
+    this.verifyPassword(user, password);
     await this.userRepository.remove(userId);
   }
 
@@ -92,9 +99,8 @@ export class UserService {
     }
   }
 
-  private async verifyPassword(userId: string, password: string) {
-    const user = await this.userRepository.findById(userId);
-    const success = await compare(password, user.hash);
+  private verifyPassword(user: User, password: string) {
+    const success = compareSync(password, user.hash);
     if (!success) {
       throw Errors.badRequest('Invalid password');
     }

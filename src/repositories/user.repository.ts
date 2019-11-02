@@ -32,13 +32,13 @@ export class UserRepository {
 
   async changePassword(id: string, password: string) {
     return this.collection.updateOne(this.getFilter(id), {
-      $set: { password: await hash(password, 10) }
+      $set: { hash: await hash(password, 10) }
     });
   }
 
   async changeEmail(id: string, email: string) {
     return this.collection.updateOne(this.getFilter(id), {
-      $set: { email }
+      $set: { email, verified: false }
     });
   }
 

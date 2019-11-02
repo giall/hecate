@@ -34,6 +34,14 @@ const passwordChange: ValidationOptions = {
   }
 };
 
+const passwordReset: ValidationOptions = {
+  type: 'json',
+  body: {
+    token: Validator.Joi.string(),
+    newPassword: credentials.password
+  }
+};
+
 const emailChange: ValidationOptions = {
   type: 'json',
   body: {
@@ -55,6 +63,6 @@ const token: ValidationOptions = {
   }
 };
 
-export const authOptions = {
-  login, register, passwordChange, emailChange, password, token
+export const validation = {
+  login, register, passwordReset, passwordChange, emailChange, password, token
 };

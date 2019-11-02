@@ -1,5 +1,5 @@
 import { Controller, KoaController, Post, Put, Validate } from 'koa-joi-controllers';
-import { authOptions } from './validation';
+import { validation } from './validation';
 import { Context } from 'koa';
 import { LimiterKeys, RateLimiter } from '../rate.limiter/rate.limiter';
 import { User, UserDto } from '../models/user';
@@ -26,7 +26,7 @@ export class AuthController extends KoaController {
   }
 
   @Post('/login')
-  @Validate(authOptions.login)
+  @Validate(validation.login)
   async login(ctx: Context) {
     const {email, password} = ctx.request.body;
     const keys: LimiterKeys = {email, ip: ctx.ip};

@@ -24,8 +24,8 @@ export class Transporter {
       from: `"${appName}" <hello@giall.dev>`,
       to: user.email,
       subject: 'Please verify your email',
-      text: `Welcome to ${appName}, ${user.username}!\n\nPlease verify your email by following this link: ${emailVerificationUrl}\n\nThank you,\nThe ${appName} Team`,
-      html: `Welcome to ${appName}, <b>${user.username}</b>!<br/><br/>
+      text: `Hi ${user.username}!\n\nPlease verify your email by following this link: ${emailVerificationUrl}\n\nThank you,\nThe ${appName} Team`,
+      html: `Hi <b>${user.username}</b>!<br/><br/>
         Please verify your email by <a href="${emailVerificationUrl}">following this link</a>.<br/><br/>
         Thank you,<br/>The ${appName} Team`
     });
