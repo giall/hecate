@@ -18,7 +18,10 @@ export class Database {
   async connect(): Promise<void> {
     this.logger.info('Connecting to database...');
 
-    const options = { useNewUrlParser: true };
+    const options = {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    };
     this.client = await new MongoClient(this.uri, options).connect();
 
     this.logger.info('Successfully connected to database.');

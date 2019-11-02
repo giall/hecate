@@ -23,7 +23,7 @@ export class UserRepository {
 
   async create(user: User): Promise<User> {
     const result = await this.collection.insertOne(user);
-    return result.ops[0];
+    return result.ops[0] as User;
   }
 
   async changePassword(id: string, password: string) {
