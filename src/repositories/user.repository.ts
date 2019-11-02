@@ -2,6 +2,7 @@ import { Database } from '../database/database';
 import { Collection, ObjectId } from 'mongodb';
 import { User } from '../models/user';
 import { hash } from 'bcrypt';
+import { Errors } from '../error/errors';
 
 export class UserRepository {
 
@@ -13,7 +14,8 @@ export class UserRepository {
 
   async findById(id: string): Promise<User> {
     const entity = await this.collection.findOne(this.getFilter(id));
-    return entity && User.from(entity);
+    if (!entity) throw Errors.badRequest(`user with id=${id} does not exist`);
+    return User.from(entity);
   }
 
   async find(options: {}): Promise<User> {

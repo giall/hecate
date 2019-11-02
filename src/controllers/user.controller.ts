@@ -36,7 +36,7 @@ export class UserController extends KoaController {
   }
 
   @Put('/email/change')
-  @Validate(validation.emailChange)
+  @Validate(validation.emailAndPassword)
   @Pre(access)
   async changeEmail(ctx: Context) {
     const {email, password} = ctx.request.body;
@@ -45,7 +45,7 @@ export class UserController extends KoaController {
   }
 
   @Post('/password/reset/request')
-  @Json()
+  @Validate(validation.email)
   async resetPasswordRequest(ctx: Context) {
     const {email} = ctx.body;
     await this.userService.resetPasswordRequest(email);

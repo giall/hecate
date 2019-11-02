@@ -24,16 +24,6 @@ async function errorHandler(ctx, next) {
   }
 }
 
-const rateLimiter = new RateLimiterMemory({
-  points: 20,
-  duration: 60,
-});
-
-async function loginRateLimit(ctx, next) {
-  ctx.rateLimiter = rateLimiter;
-  await next();
-}
-
 function requestLogger(logger: Logger) {
   return koaLogger({
     transporter: (str) => {
@@ -69,5 +59,5 @@ async function refresh(ctx, next) {
 }
 
 export {
-  requestLogger, ctxLogger, errorHandler, loginRateLimit, access, refresh
+  requestLogger, ctxLogger, errorHandler, access, refresh
 }

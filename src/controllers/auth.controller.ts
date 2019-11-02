@@ -18,7 +18,7 @@ export class AuthController extends KoaController {
   rateLimiter: RateLimiter;
 
   constructor(userRepository: UserRepository, authService: AuthService,
-    transporter: Transporter, rateLimiter: RateLimiter) {
+              transporter: Transporter, rateLimiter: RateLimiter) {
     super();
     this.userRepository = userRepository;
     this.authService = authService;
@@ -27,7 +27,7 @@ export class AuthController extends KoaController {
   }
 
   @Post('/login')
-  @Validate(validation.login)
+  @Validate(validation.credentials)
   async login(ctx: Context) {
     const {email, password} = ctx.request.body;
     const keys: LimiterKeys = {email, ip: ctx.ip};
@@ -82,16 +82,17 @@ export class AuthController extends KoaController {
     ctx.status = 202;
   }
 
-  @Put('/magic/login')
+  @Post('/magic/login')
+  @Validate(validation.token)
   async magicLogin(ctx: Context) {
-    const { token } = ctx.request.body;
+    const {token} = ctx.request.body;
     const payload = TokenUtils.decode(token, Token.MagicLogin);
     const user = await this.userRepository.findById(payload.id);
-    if (user.sessions.includes(payload.session)) {
-      throw Errors.gone('temp login token has already been used');
-    }
+    // if (user.sessions.includes(payload.session)) {
+    //   throw Errors.gone('temp login token has already been used');
+    // }
     // add session id manually
-    this.setAuthTokens(ctx, user);
+    await this.setAuthTokens(ctx, user);
     ctx.status = 200;
     ctx.body = UserDto.from(user);
   }

@@ -220,6 +220,28 @@ describe('/api/auth/invalidate', () => {
   });
 });
 
+describe('/api/auth/magic/login', () => {
+  const endpoint = '/api/auth/magic/login';
+
+  test('Should fail if token user ID is not valid', async () => {
+    const response = await request(app.server).post(endpoint)
+      .send({
+        token: TokenUtils.magicLogin({
+          id: chance.string({length: 12})
+        } as User)
+      });
+    expect(response.status).toEqual(400);
+  });
+
+  test('Should login successfully', async () => {
+    const response = await request(app.server).post(endpoint)
+      .send({
+        token: TokenUtils.magicLogin(user)
+      });
+    expect(response.status).toEqual(200);
+  });
+});
+
 
 describe('/api/user/password/reset', () => {
   const endpoint = '/api/user/password/reset';
