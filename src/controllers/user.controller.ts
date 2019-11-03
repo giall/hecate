@@ -28,11 +28,11 @@ export class UserController extends KoaController {
     ctx.body = UserDto.from(user);
   }
 
-  @Put('/email/verify')
+  @Put('/email/verification')
   @Validate(params({
     token: Field.Token
   }))
-  async verifyEmail(ctx: Context) {
+  async emailVerification(ctx: Context) {
     const {token} = ctx.request.body;
     ctx.log.debug(`email verification token: ${token}`);
     const userId = TokenUtils.decode(token, Token.EmailVerification).id;
@@ -50,6 +50,18 @@ export class UserController extends KoaController {
   async changeEmail(ctx: Context) {
     const {email, password} = ctx.request.body;
     await this.userService.changeEmail(ctx.user, email, password);
+    ctx.status = 204;
+  }
+
+  @Put('/password/change')
+  @Validate(params({
+    oldPassword: Field.Password,
+    newPassword: Field.Password
+  }))
+  @Pre(access)
+  async changePassword(ctx: Context) {
+    const {oldPassword, newPassword} = ctx.request.body;
+    await this.userService.changePassword(ctx.user, oldPassword, newPassword);
     ctx.status = 204;
   }
 
@@ -75,19 +87,7 @@ export class UserController extends KoaController {
     ctx.status = 204;
   }
 
-  @Put('/password/change')
-  @Validate(params({
-    oldPassword: Field.Password,
-    newPassword: Field.Password
-  }))
-  @Pre(access)
-  async changePassword(ctx: Context) {
-    const {oldPassword, newPassword} = ctx.request.body;
-    await this.userService.changePassword(ctx.user, oldPassword, newPassword);
-    ctx.status = 204;
-  }
-
-  @Delete('/delete')
+  @Put('/delete')
   @Validate(params({
     password: Field.Password
   }))
@@ -95,6 +95,8 @@ export class UserController extends KoaController {
   async deleteUser(ctx: Context) {
     const {password} = ctx.request.body;
     await this.userService.deleteUser(ctx.user, password);
+    ctx.cookies.set(Token.Access, undefined);
+    ctx.cookies.set(Token.Refresh, undefined);
     ctx.status = 204;
   }
 }

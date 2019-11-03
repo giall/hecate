@@ -281,7 +281,7 @@ describe('/api/user/password/reset', () => {
         } as User),
         newPassword: newPassword
       });
-    expect(response.status).toEqual(401);
+    expect(response.status).toEqual(410);
   });
 
   test('Should reset password', async () => {
@@ -328,7 +328,7 @@ describe('/api/user/password/change', () => {
         oldPassword: chance.password(),
         newPassword: newPassword
       });
-    expect(response.status).toEqual(400);
+    expect(response.status).toEqual(401);
   });
 
   test('Should change user password', async () => {
@@ -345,8 +345,8 @@ describe('/api/user/password/change', () => {
   });
 });
 
-describe('/api/user/email/verify', () => {
-  const endpoint = '/api/user/email/verify';
+describe('/api/user/email/verification', () => {
+  const endpoint = '/api/user/email/verification';
 
   test('Should verify user', async () => {
     const response = await request(app.server).put(endpoint).send({
@@ -395,7 +395,7 @@ describe('/api/user/email/change', () => {
         email: chance.emailAddress(),
         password: chance.password()
       });
-    expect(response.status).toEqual(400);
+    expect(response.status).toEqual(401);
   });
 
   test('Should change user email and unverify', async () => {
@@ -449,21 +449,21 @@ describe('/api/user/delete', () => {
   });
 
   test('Should fail if there is no access token', async () => {
-    const response = await request(app.server).delete(endpoint);
+    const response = await request(app.server).put(endpoint);
     expect(response.status).toEqual(401);
   });
 
   test('Should fail if password is invalid', async () => {
-    const response = await request(app.server).delete(endpoint)
+    const response = await request(app.server).put(endpoint)
       .set('Cookie', cookie)
       .send({
         password: chance.password()
       });
-    expect(response.status).toEqual(400);
+    expect(response.status).toEqual(401);
   });
 
   test('Should delete user', async () => {
-    const response = await request(app.server).delete(endpoint)
+    const response = await request(app.server).put(endpoint)
       .set('Cookie', cookie)
       .send({
         password: userDetails.password

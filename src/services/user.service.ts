@@ -49,7 +49,7 @@ export class UserService {
   async resetPassword(userId: string, hash: string, newPassword: string) {
     const user = await this.userRepository.findById(userId);
     if (user.hash !== hash) {
-      throw Errors.unauthorized(`Current hash for user with id=${userId} does not match with the one in the token`);
+      throw Errors.gone(`Current hash for user with id=${userId} does not match with the one in the token`);
     }
     await this.userRepository.changePassword(userId, newPassword);
   }
@@ -102,7 +102,7 @@ export class UserService {
   private verifyPassword(user: User, password: string) {
     const success = compareSync(password, user.hash);
     if (!success) {
-      throw Errors.badRequest('Invalid password');
+      throw Errors.unauthorized('Invalid password');
     }
   }
 }
