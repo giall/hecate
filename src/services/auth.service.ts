@@ -40,7 +40,7 @@ export class AuthService {
   async magicLogin(userId: string) {
     const user = await this.userRepository.findById(userId);
     if (!user.allowMagicLogin) {
-      throw Errors.badRequest('magic login token has already been used');
+      throw Errors.gone('magic login token has already been used');
     }
     await this.userRepository.useMagicLogin(userId);
     return user;

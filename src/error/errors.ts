@@ -27,8 +27,4 @@ export class Errors {
   static gone(message: string) {
     return new AppError(message, 410);
   }
-
-  static tooManyRequests() {
-    return new AppError('Too many requests', 429);
-  }
 }

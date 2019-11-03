@@ -112,7 +112,7 @@ describe('/api/auth/login', () => {
       password: chance.password()
     });
     expect(response.status).toEqual(401);
-    expect(response.header['set-cookie']).toBe(undefined);
+    expect(response.header['set-cookie']).toBeUndefined();
   });
 
   test('Should fail if user does not exist', async () => {
@@ -121,7 +121,7 @@ describe('/api/auth/login', () => {
       password: userDetails.password
     });
     expect(response.status).toEqual(401);
-    expect(response.header['set-cookie']).toBe(undefined);
+    expect(response.header['set-cookie']).toBeUndefined();
   });
 
   test('Should be successful', async () => {
@@ -264,7 +264,7 @@ describe('/api/auth/magic/login', () => {
       .send({
         token: TokenUtils.magicLogin(user)
       });
-    expect(response.status).toEqual(400);
+    expect(response.status).toEqual(410);
   });
 });
 
@@ -427,6 +427,7 @@ describe('/api/auth/login [Rate Limit]', () => {
     }
     const response = await request(app.server).post(endpoint).send(data);
     expect(response.status).toEqual(429);
+    expect(response.header['retry-after']).toBeDefined();
   });
 });
 

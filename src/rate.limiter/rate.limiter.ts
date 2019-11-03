@@ -1,12 +1,16 @@
 import { Database } from '../database/database';
-import { RateLimiterMongo } from 'rate-limiter-flexible';
+import { RateLimiterMongo, RateLimiterRes } from 'rate-limiter-flexible';
 import { Logger } from '../logger/logger';
-import { Errors } from '../error/errors';
 import { properties } from '../properties/properties';
 
 export interface LimiterKeys {
   email: string;
   ip: string;
+}
+
+interface LimiterRes {
+  ok: boolean;
+  retryAfter?: string;
 }
 
 export class RateLimiter {
@@ -23,22 +27,25 @@ export class RateLimiter {
     this.logger = logger;
   }
 
-  async limit(keys: LimiterKeys) {
-    const emailAllowed = await this.consume(keys.email);
-    const ipAllowed = await this.consume(keys.ip);
-    if (!emailAllowed || !ipAllowed) {
-      this.logger.warn('Rate limit reached', keys);
-      throw Errors.tooManyRequests();
+  async limit(keys: LimiterKeys): Promise<LimiterRes> {
+    try {
+      await this.limiter.consume(keys.email);
+      await this.limiter.consume(keys.ip);
+      return {ok: true};
+    } catch (err) {
+      return this.handleError(err, keys);
     }
   }
 
-  private async consume(key: string): Promise<boolean> {
-    try {
-      await this.limiter.consume(key);
-      return true;
-    } catch (err) {
-      this.logger.debug(`Rate limit error with key=${key}`, err);
-      return false;
+  private handleError(err, keys): LimiterRes {
+    if (err instanceof RateLimiterRes) {
+      this.logger.warn('Rate limit reached', keys);
+      return {
+        ok: false,
+        retryAfter: (err.msBeforeNext / 1000).toString()
+      }
+    } else {
+      throw err;
     }
   }
 

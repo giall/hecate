@@ -31,27 +31,18 @@ export class AuthController extends KoaController {
   async login(ctx: Context) {
     const {email, password} = ctx.request.body;
     const keys: LimiterKeys = {email, ip: ctx.ip};
-    await this.rateLimiter.limit(keys);
-
-    const user = await this.authService.login(email, password);
-    ctx.log.info(`User with id=${user.id} successfully logged in`);
-    await this.setAuthTokens(ctx, user);
-    ctx.status = 200;
-    ctx.body = UserDto.from(user);
-    await this.rateLimiter.reset(keys);
-  }
-
-  @Post('/refresh')
-  @Pre(refresh)
-  async refresh(ctx: Context) {
-    const user = await this.userRepository.findById(ctx.user);
-    ctx.log.info(`Refreshing tokens for user with id=${user.id}`);
-    this.validateSession(ctx.session, user.sessions);
-    await this.setAuthTokens(ctx, user);
-    await this.authService.removeSession(user.id, ctx.session);
-    ctx.log.info(`User with id=${user.id} successfully refreshed tokens`);
-    ctx.status = 200;
-    ctx.body = UserDto.from(user);
+    const res = await this.rateLimiter.limit(keys);
+    if (res.ok) {
+      const user = await this.authService.login(email, password);
+      ctx.log.info(`User with id=${user.id} successfully logged in`);
+      await this.setAuthTokens(ctx, user);
+      ctx.status = 200;
+      ctx.body = UserDto.from(user);
+      await this.rateLimiter.reset(keys);
+    } else {
+      ctx.set('Retry-After', res.retryAfter);
+      ctx.status = 429;
+    }
   }
 
   @Post('/logout')
@@ -59,18 +50,6 @@ export class AuthController extends KoaController {
   async logout(ctx: Context) {
     await this.authService.removeSession(ctx.user, ctx.session);
     this.clearAuthTokens(ctx);
-    ctx.status = 204;
-  }
-
-  @Post('/invalidate')
-  @Pre(refresh)
-  async invalidate(ctx: Context) {
-    const user = await this.userRepository.findById(ctx.user);
-    ctx.log.info(`Invalidating refresh tokens for user with id=${user.id}`);
-    this.validateSession(ctx.session, user.sessions);
-    await this.authService.resetSessions(user.id);
-    this.clearAuthTokens(ctx);
-    ctx.log.info('Tokens successfully invalidated');
     ctx.status = 204;
   }
 
@@ -95,6 +74,31 @@ export class AuthController extends KoaController {
     await this.setAuthTokens(ctx, user);
     ctx.status = 200;
     ctx.body = UserDto.from(user);
+  }
+
+  @Post('/refresh')
+  @Pre(refresh)
+  async refresh(ctx: Context) {
+    const user = await this.userRepository.findById(ctx.user);
+    ctx.log.info(`Refreshing tokens for user with id=${user.id}`);
+    this.validateSession(ctx.session, user.sessions);
+    await this.setAuthTokens(ctx, user);
+    await this.authService.removeSession(user.id, ctx.session);
+    ctx.log.info(`User with id=${user.id} successfully refreshed tokens`);
+    ctx.status = 200;
+    ctx.body = UserDto.from(user);
+  }
+
+  @Post('/invalidate')
+  @Pre(refresh)
+  async invalidate(ctx: Context) {
+    const user = await this.userRepository.findById(ctx.user);
+    ctx.log.info(`Invalidating refresh tokens for user with id=${user.id}`);
+    this.validateSession(ctx.session, user.sessions);
+    await this.authService.resetSessions(user.id);
+    this.clearAuthTokens(ctx);
+    ctx.log.info('Tokens successfully invalidated');
+    ctx.status = 204;
   }
 
   private async setAuthTokens(ctx: Context, user: User) {
