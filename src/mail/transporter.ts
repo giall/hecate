@@ -49,7 +49,7 @@ export class Transporter {
     });
   }
 
-  async tempLogin(user: User) {
+  async magicLogin(user: User) {
     const token = TokenUtils.magicLogin(user);
     const magicLoginUrl = `${properties.web.host}/${properties.web.endpoints.magicLogin}?token=${token}`;
     const appName = properties.app.name;

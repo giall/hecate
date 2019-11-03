@@ -1,5 +1,5 @@
 import { Controller, Delete, KoaController, Post, Pre, Put, Validate } from 'koa-joi-controllers';
-import { Field, params } from './validation';
+import { Field, params } from '../utils/validation.utils';
 import { Context } from 'koa';
 import { UserDto } from '../models/user';
 import { Token, TokenUtils } from '../utils/token.utils';

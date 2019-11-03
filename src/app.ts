@@ -54,11 +54,11 @@ export class App {
   private controllers(): KoaController[] {
     const userRepository = new UserRepository(this.database);
     const transporter = new Transporter();
-    const authService = new AuthService(userRepository);
+    const authService = new AuthService(userRepository, transporter);
     const userService = new UserService(userRepository, transporter);
     const rateLimiter = new RateLimiter(this.database, this.logger);
     return [
-      new AuthController(userRepository, authService, transporter, rateLimiter),
+      new AuthController(userRepository, authService, rateLimiter),
       new UserController(userService)
     ];
   }

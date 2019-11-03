@@ -56,6 +56,18 @@ export class UserRepository {
     });
   }
 
+  async allowMagicLogin(id: string) {
+    return this.collection.updateOne(this.getFilter(id), {
+      $set: { allowMagicLogin: true }
+    });
+  }
+
+  async useMagicLogin(id: string) {
+    return this.collection.updateOne(this.getFilter(id), {
+      $set: { allowMagicLogin: false }
+    });
+  }
+
   private getFilter(id: string) {
     return { _id: new ObjectId(id) };
   }

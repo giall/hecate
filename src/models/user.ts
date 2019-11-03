@@ -13,6 +13,7 @@ export class User {
   email: string;
   role: Role;
   verified: boolean;
+  allowMagicLogin: boolean;
   sessions: string[];
 
   get id(): string {
@@ -33,6 +34,7 @@ export class User {
       email: credentials.email,
       hash: hashSync(credentials.password, 10),
       role: Role.User,
+      magicLogin: false,
       verified: false,
       sessions: []
     });

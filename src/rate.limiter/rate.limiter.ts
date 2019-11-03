@@ -27,16 +27,17 @@ export class RateLimiter {
     const emailAllowed = await this.consume(keys.email);
     const ipAllowed = await this.consume(keys.ip);
     if (!emailAllowed || !ipAllowed) {
+      this.logger.warn('Rate limit reached', keys);
       throw Errors.tooManyRequests();
     }
   }
 
-  private async consume(key: string) {
+  private async consume(key: string): Promise<boolean> {
     try {
       await this.limiter.consume(key);
       return true;
     } catch (err) {
-      this.logger.warn(`Rate limit error with key=${key}`, err);
+      this.logger.debug(`Rate limit error with key=${key}`, err);
       return false;
     }
   }

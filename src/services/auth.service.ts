@@ -4,14 +4,17 @@ import { Errors } from '../error/errors';
 import { User } from '../models/user';
 import { v4 as uuid } from 'uuid';
 import { compare } from 'bcrypt';
+import { Transporter } from '../mail/transporter';
 
 export class AuthService {
   private userRepository: UserRepository;
   private logger: Logger;
+  private transporter: Transporter;
 
-  constructor(userRepository: UserRepository) {
+  constructor(userRepository: UserRepository, transporter: Transporter) {
     this.logger = new Logger();
     this.userRepository = userRepository;
+    this.transporter = transporter;
   }
 
   async login(email: string, password: string): Promise<User> {
@@ -25,6 +28,21 @@ export class AuthService {
     if (!success) {
       throw Errors.unauthorized(`Invalid password for user with email ${email}`);
     }
+    return user;
+  }
+
+  async requestMagicLogin(email: string) {
+    const user = await this.userRepository.find({email});
+    await this.userRepository.allowMagicLogin(user.id);
+    await this.transporter.magicLogin(user);
+  }
+
+  async magicLogin(userId: string) {
+    const user = await this.userRepository.findById(userId);
+    if (!user.allowMagicLogin) {
+      throw Errors.badRequest('magic login token has already been used');
+    }
+    await this.userRepository.useMagicLogin(userId);
     return user;
   }
 

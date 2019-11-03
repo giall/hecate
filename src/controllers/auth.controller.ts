@@ -1,11 +1,10 @@
-import { Controller, KoaController, Post, Pre, Put, Validate } from 'koa-joi-controllers';
-import { Field, params } from './validation';
+import { Controller, KoaController, Post, Pre, Validate } from 'koa-joi-controllers';
+import { Field, params } from '../utils/validation.utils';
 import { Context } from 'koa';
 import { LimiterKeys, RateLimiter } from '../rate.limiter/rate.limiter';
 import { User, UserDto } from '../models/user';
 import { UserRepository } from '../repositories/user.repository';
 import { AuthService } from '../services/auth.service';
-import { Transporter } from '../mail/transporter';
 import { Token, TokenUtils } from '../utils/token.utils';
 import { Errors } from '../error/errors';
 import { refresh } from '../middleware/middleware';
@@ -14,15 +13,13 @@ import { refresh } from '../middleware/middleware';
 export class AuthController extends KoaController {
   userRepository: UserRepository;
   authService: AuthService;
-  transporter: Transporter;
   rateLimiter: RateLimiter;
 
   constructor(userRepository: UserRepository, authService: AuthService,
-              transporter: Transporter, rateLimiter: RateLimiter) {
+              rateLimiter: RateLimiter) {
     super();
     this.userRepository = userRepository;
     this.authService = authService;
-    this.transporter = transporter;
     this.rateLimiter = rateLimiter;
   }
 
@@ -78,10 +75,12 @@ export class AuthController extends KoaController {
   }
 
   @Post('/magic/login/request')
+  @Validate(params({
+    email: Field.Email
+  }))
   async magicLoginRequest(ctx: Context) {
-    const {email} = ctx.body;
-    const user = await this.userRepository.find({email});
-    await this.transporter.tempLogin(user);
+    const {email} = ctx.request.body;
+    await this.authService.requestMagicLogin(email);
     ctx.status = 202;
   }
 
@@ -92,11 +91,7 @@ export class AuthController extends KoaController {
   async magicLogin(ctx: Context) {
     const {token} = ctx.request.body;
     const payload = TokenUtils.decode(token, Token.MagicLogin);
-    const user = await this.userRepository.findById(payload.id);
-    // if (user.sessions.includes(payload.session)) {
-    //   throw Errors.gone('temp login token has already been used');
-    // }
-    // add session id manually
+    const user = await this.authService.magicLogin(payload.id);
     await this.setAuthTokens(ctx, user);
     ctx.status = 200;
     ctx.body = UserDto.from(user);
@@ -123,5 +118,4 @@ export class AuthController extends KoaController {
       throw Errors.forbidden('invalid session');
     }
   }
-
 }

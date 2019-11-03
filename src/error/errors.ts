@@ -20,10 +20,6 @@ export class Errors {
     return new AppError(message, 403);
   }
 
-  static notFound(message: string) {
-    return new AppError(message, 404);
-  }
-
   static conflict(message: string) {
     return new AppError(message, 409);
   }
