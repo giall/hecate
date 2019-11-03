@@ -10,7 +10,9 @@ export interface LimiterKeys {
 
 interface LimiterRes {
   ok: boolean;
-  retryAfter?: string;
+  limit?: number;
+  remaining?: number;
+  reset?: Date;
 }
 
 export class RateLimiter {
@@ -28,25 +30,20 @@ export class RateLimiter {
   }
 
   async limit(keys: LimiterKeys): Promise<LimiterRes> {
+    let ok = false;
+    let result: RateLimiterRes;
     try {
-      await this.limiter.consume(keys.email);
-      await this.limiter.consume(keys.ip);
-      return {ok: true};
+      result = await this.consume(keys);
+      ok = true;
     } catch (err) {
-      return this.handleError(err, keys);
+      result = this.handleLimiterError(err);
     }
-  }
-
-  private handleError(err, keys): LimiterRes {
-    if (err instanceof RateLimiterRes) {
-      this.logger.warn('Rate limit reached', keys);
-      return {
-        ok: false,
-        retryAfter: (err.msBeforeNext / 1000).toString()
-      }
-    } else {
-      throw err;
-    }
+    return {
+      ok,
+      limit: properties.limiter.retry.attempts,
+      remaining: result.remainingPoints,
+      reset: new Date(Date.now() + result.msBeforeNext)
+    };
   }
 
   async reset(keys: LimiterKeys) {
@@ -55,6 +52,19 @@ export class RateLimiter {
       await this.limiter.delete(keys.ip);
     } catch (err) {
       this.logger.warn(err);
+    }
+  }
+
+  private async consume(keys) {
+    await this.limiter.consume(keys.email);
+    return this.limiter.consume(keys.ip);
+  }
+
+  private handleLimiterError(err): RateLimiterRes {
+    if (err instanceof RateLimiterRes) {
+      return err;
+    } else {
+      throw err;
     }
   }
 }

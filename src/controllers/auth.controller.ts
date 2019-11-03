@@ -34,13 +34,16 @@ export class AuthController extends KoaController {
     const res = await this.rateLimiter.limit(keys);
     if (res.ok) {
       const user = await this.authService.login(email, password);
-      ctx.log.info(`User with id=${user.id} successfully logged in`);
-      await this.setAuthTokens(ctx, user);
-      ctx.status = 200;
-      ctx.body = UserDto.from(user);
-      await this.rateLimiter.reset(keys);
+      if (user) {
+        await this.rateLimiter.reset(keys);
+        ctx.log.info(`User with id=${user.id} successfully logged in`);
+        await this.userLogin(ctx, user);
+      } else {
+        this.setRateLimitHeaders(ctx, res);
+        ctx.status = 401;
+      }
     } else {
-      ctx.set('Retry-After', res.retryAfter);
+      this.setRateLimitHeaders(ctx, res);
       ctx.status = 429;
     }
   }
@@ -71,9 +74,8 @@ export class AuthController extends KoaController {
     const {token} = ctx.request.body;
     const payload = TokenUtils.decode(token, Token.MagicLogin);
     const user = await this.authService.magicLogin(payload.id);
-    await this.setAuthTokens(ctx, user);
-    ctx.status = 200;
-    ctx.body = UserDto.from(user);
+    ctx.log.info(`User with id=${user.id} logged in via magic login`);
+    await this.userLogin(ctx, user);
   }
 
   @Post('/refresh')
@@ -82,11 +84,9 @@ export class AuthController extends KoaController {
     const user = await this.userRepository.findById(ctx.user);
     ctx.log.info(`Refreshing tokens for user with id=${user.id}`);
     this.validateSession(ctx.session, user.sessions);
-    await this.setAuthTokens(ctx, user);
     await this.authService.removeSession(user.id, ctx.session);
     ctx.log.info(`User with id=${user.id} successfully refreshed tokens`);
-    ctx.status = 200;
-    ctx.body = UserDto.from(user);
+    await this.userLogin(ctx, user);
   }
 
   @Post('/invalidate')
@@ -99,6 +99,12 @@ export class AuthController extends KoaController {
     this.clearAuthTokens(ctx);
     ctx.log.info('Tokens successfully invalidated');
     ctx.status = 204;
+  }
+
+  private async userLogin(ctx, user) {
+    await this.setAuthTokens(ctx, user);
+    ctx.status = 200;
+    ctx.body = UserDto.from(user);
   }
 
   private async setAuthTokens(ctx: Context, user: User) {
@@ -121,5 +127,11 @@ export class AuthController extends KoaController {
     if (!sessions.includes(session)) {
       throw Errors.forbidden('invalid session');
     }
+  }
+
+  private setRateLimitHeaders(ctx, res) {
+    ctx.set('X-RateLimit-Limit', res.limit);
+    ctx.set('X-RateLimit-Remaining', res.remaining);
+    ctx.set('X-RateLimit-Reset', res.reset);
   }
 }

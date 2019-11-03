@@ -417,17 +417,26 @@ describe('/api/user/email/change', () => {
 describe('/api/auth/login [Rate Limit]', () => {
   const endpoint = '/api/auth/login';
 
+  function validateRateLimitHeaders(headers, limit, remaining) {
+    expect(headers['x-ratelimit-limit']).toBe(`${limit}`);
+    expect(headers['x-ratelimit-remaining']).toBe(`${remaining}`);
+    expect(headers['x-ratelimit-reset']).toBeDefined();
+  }
+
   test('Should block user if too many attempts', async () => {
     const data = {
       email: userDetails.email,
       password: chance.password()
     };
-    for (const _ of new Array(5)) {
-      await request(app.server).post(endpoint).send(data);
+    const attempts = properties.limiter.retry.attempts;
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+      const response = await request(app.server).post(endpoint).send(data);
+      expect(response.status).toEqual(401);
+      validateRateLimitHeaders(response.header, attempts, attempts - attempt);
     }
     const response = await request(app.server).post(endpoint).send(data);
     expect(response.status).toEqual(429);
-    expect(response.header['retry-after']).toBeDefined();
+    validateRateLimitHeaders(response.header, attempts, 0);
   });
 });
 

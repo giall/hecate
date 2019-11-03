@@ -23,12 +23,11 @@ export class AuthService {
     const hash = user && user.hash || '.';
     const success = await compare(password, hash);
     if (!user) {
-      throw Errors.unauthorized(`User with email ${email} does not exist`);
+      this.logger.warn(`User with email ${email} does not exist`);
+    } else if (!success) {
+      this.logger.warn(`Invalid password for user with email ${email}`);
     }
-    if (!success) {
-      throw Errors.unauthorized(`Invalid password for user with email ${email}`);
-    }
-    return user;
+    return success ? user : null;
   }
 
   async requestMagicLogin(email: string) {
