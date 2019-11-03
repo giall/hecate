@@ -221,8 +221,8 @@ describe('/api/auth/invalidate', () => {
   });
 });
 
-describe('/api/auth/magic/login', () => {
-  const endpoint = '/api/auth/magic/login';
+describe('/api/auth/magic.login', () => {
+  const endpoint = '/api/auth/magic.login';
 
   test('Should fail if token user is not valid', async () => {
     const response = await request(app.server).post(endpoint)

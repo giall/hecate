@@ -1,17 +1,11 @@
 import { ObjectId } from 'bson';
 import { hashSync } from 'bcrypt';
 
-export enum Role {
-  User,
-  Admin
-}
-
 export class User {
   _id?: ObjectId;
   username: string;
   hash: string;
   email: string;
-  role: Role;
   verified: boolean;
   allowMagicLogin: boolean;
   sessions: string[];
@@ -33,7 +27,6 @@ export class User {
       username: credentials.username,
       email: credentials.email,
       hash: hashSync(credentials.password, 10),
-      role: Role.User,
       magicLogin: false,
       verified: false,
       sessions: []
@@ -50,7 +43,6 @@ export class Credentials {
 export class UserDto {
   username: string;
   email: string;
-  role: Role;
   verified: boolean;
 
   private constructor(values: {}) {
@@ -61,7 +53,6 @@ export class UserDto {
     return new UserDto({
       username: user.username,
       email: user.email,
-      role: user.role,
       verified: user.verified
     });
   }

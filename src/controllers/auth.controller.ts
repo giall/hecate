@@ -56,7 +56,7 @@ export class AuthController extends KoaController {
     ctx.status = 204;
   }
 
-  @Post('/magic/login/request')
+  @Post('/magic.login/request')
   @Validate(params({
     email: Field.Email
   }))
@@ -66,7 +66,7 @@ export class AuthController extends KoaController {
     ctx.status = 202;
   }
 
-  @Post('/magic/login')
+  @Post('/magic.login')
   @Validate(params({
     token: Field.Token
   }))
