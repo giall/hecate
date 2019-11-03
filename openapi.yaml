@@ -21,6 +21,18 @@ paths:
         - auth
       summary: user login
       operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
       responses:
         '200':
           description: user logged in successfully
@@ -57,17 +69,6 @@ paths:
               schema:
                 type: string
                 format: date
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                email:
-                  type: string
-                  format: email
-                password:
-                  type: string
   '/auth/logout':
     post:
       tags:
@@ -89,17 +90,14 @@ paths:
                 type: string
                 example: refresh=; Path=/; HttpOnly
         '401':
-          description: refresh token missing or invalid
-  '/auth/magic/login/request':
+          description: refresh cookie missing or invalid
+  '/auth/magic.login/request':
     post:
       tags:
         - auth
       summary: request one time login
       operationId: magicLoginRequest
       description: Sends user a one time login link by email, if the email is valid
-      responses:
-        '202':
-          description: one time login link sent to user by email
       requestBody:
         content:
           application/json:
@@ -109,7 +107,10 @@ paths:
                 email:
                   type: string
                   format: email
-  '/auth/magic/login':
+      responses:
+        '202':
+          description: one time login link sent to user by email
+  '/auth/magic.login':
     post:
       tags:
         - auth
@@ -154,7 +155,7 @@ paths:
         '204':
           description: session refreshed and new cookies set
         '401':
-          description: refresh token missing or invalid
+          description: refresh cookie missing or invalid
           headers:
             'Set-Cookie':
               schema:
@@ -186,7 +187,179 @@ paths:
                 type: string
                 example: refresh=; Path=/; HttpOnly
         '401':
-          description: refresh token missing or invalid
+          description: refresh cookie missing or invalid
+  '/user/register':
+    post:
+      tags:
+        - user
+      summary: register user
+      operationId: register
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: user created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: invalid body parameters
+        '409':
+          description: user with given email or username already exists
+  '/user/password/reset/request':
+    post:
+      tags:
+        - user
+      summary: send password reset email
+      operationId: passwordResetRequest
+      description: Send user an email containing a password reset link/token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        '202':
+          description: email sent
+  '/user/password/reset':
+    put:
+      tags:
+        - user
+      summary: reset password
+      operationId: passwordReset
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                newPassword:
+                  type: string
+      responses:
+        '204':
+          description: password reset successfully
+        '410':
+          description: password has already been reset, token is invalid
+  '/user/password/change':
+    put:
+      tags:
+        - user
+      security:
+        - accessCookieAuth: []
+      summary: change user password
+      operationId: passwordChange
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                oldPassword:
+                  type: string
+                newPassword:
+                  type: string
+      responses:
+        '204':
+          description: password changed
+        '400':
+          description: old and new passwords are the same
+        '401':
+          description: wrong password or missing/invalid access cookie
+  '/user/email/verification':
+    put:
+      tags:
+        - user
+      summary: verify user email
+      operationId: emailVerification
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+      responses:
+        '204':
+          description: email verified
+        '401':
+          description: invalid or missing token
+        '410':
+          description: email has already been verified
+  '/user/email/change':
+    put:
+      tags:
+        - user
+      security:
+        - accessCookieAuth: []
+      summary: change user email
+      operationId: emailChange
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '204':
+          description: email changed
+        '400':
+          description: old and new email addresses are the same
+        '401':
+          description: wrong password or missing/invalid access cookie
+  '/user/delete':
+    put:
+      tags:
+        - user
+      security:
+        - accessCookieAuth: []
+      summary: delete user
+      operationId: deleteUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+      responses:
+        '204':
+          description: user deleted
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: access=; Path=/; HttpOnly
+            'Set-Cookie ':
+              schema:
+                type: string
+                example: refresh=; Path=/; HttpOnly
+        '401':
+          description: wrong password or missing/invalid access cookie
 components:
   securitySchemes:
     accessCookieAuth:
@@ -203,12 +376,8 @@ components:
       properties:
         username:
           type: string
-          example: Username
         email:
           type: string
           format: email
-        role:
-          type: string
-          enum: [User, Admin]
         verified:
           type: boolean
