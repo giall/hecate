@@ -1,0 +1,214 @@
+openapi: 3.0.0
+
+info:
+  description: Hecate API
+  version: "1.0.0"
+  title: Hecate Authentication API
+  contact:
+    email: christos.giallouros@protonmail.com
+  license:
+    name: MIT License
+    url: 'https://opensource.org/licenses/MIT'
+tags:
+  - name: auth
+    description: Session related calls
+  - name: user
+    description: User related calls
+paths:
+  '/auth/login':
+    post:
+      tags:
+        - auth
+      summary: user login
+      operationId: login
+      responses:
+        '200':
+          description: user logged in successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          headers:
+            'Set-Cookie':
+              schema:
+                type: string
+                example: access=abcde12345; Path=/; HttpOnly
+            'Set-Cookie ':
+              schema:
+                type: string
+                example: refresh=fghij67890; Path=/; HttpOnly
+        '401':
+          description: invalid credentials
+        '429':
+          description: too many requests
+          headers:
+            'X-RateLimit-Limit':
+              description: Total number of requests allowed
+              schema:
+                type: number
+                example: 5
+            'X-RateLimit-Remaining':
+              description: Remaining number of requests allowed
+              schema:
+                type: number
+                example: 5
+            'X-RateLimit-Reset':
+              description: Date when limit will be reset
+              schema:
+                type: string
+                format: date
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+  '/auth/logout':
+    post:
+      tags:
+        - auth
+      security:
+        - refreshCookieAuth: []
+      summary: user logout
+      operationId: logout
+      responses:
+        '204':
+          description: user logged out successfully
+          headers:
+            'Set-Cookie':
+              schema:
+                type: string
+                example: access=; Path=/; HttpOnly
+            'Set-Cookie ':
+              schema:
+                type: string
+                example: refresh=; Path=/; HttpOnly
+        '401':
+          description: refresh token missing or invalid
+  '/auth/magic/login/request':
+    post:
+      tags:
+        - auth
+      summary: request one time login
+      operationId: magicLoginRequest
+      description: Sends user a one time login link by email, if the email is valid
+      responses:
+        '202':
+          description: one time login link sent to user by email
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+  '/auth/magic/login':
+    post:
+      tags:
+        - auth
+      summary: one time user login
+      operationId: magicLogin
+      responses:
+        '200':
+          description: user logged in successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          headers:
+            'Set-Cookie':
+              schema:
+                type: string
+                example: access=abcde12345; Path=/; HttpOnly
+            'Set-Cookie ':
+              schema:
+                type: string
+                example: refresh=fghij67890; Path=/; HttpOnly
+        '410':
+          description: token has already been used
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+  '/auth/refresh':
+    post:
+      tags:
+        - auth
+      security:
+        - refreshCookieAuth: []
+      summary: refresh user session
+      operationId: refresh
+      description: 'Refresh user session by updating access and refresh cookies'
+      responses:
+        '204':
+          description: session refreshed and new cookies set
+        '401':
+          description: refresh token missing or invalid
+          headers:
+            'Set-Cookie':
+              schema:
+                type: string
+                example: access=abcde12345; Path=/; HttpOnly
+            'Set-Cookie ':
+              schema:
+                type: string
+                example: refresh=fghij67890; Path=/; HttpOnly
+  '/auth/invalidate':
+    post:
+      tags:
+        - auth
+      security:
+        - refreshCookieAuth: []
+      summary: invalidate all user sessions
+      operationId: invalidate
+      description: 'Invalidates all user sessions. This will log the user out of every session.'
+      responses:
+        '204':
+          description: user sessions invalidated
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: access=; Path=/; HttpOnly
+            'Set-Cookie ':
+              schema:
+                type: string
+                example: refresh=; Path=/; HttpOnly
+        '401':
+          description: refresh token missing or invalid
+components:
+  securitySchemes:
+    accessCookieAuth:
+      type: apiKey
+      in: cookie
+      name: access
+    refreshCookieAuth:
+      type: apiKey
+      in: cookie
+      name: refresh
+  schemas:
+    User:
+      type: object
+      properties:
+        username:
+          type: string
+          example: Username
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [User, Admin]
+        verified:
+          type: boolean
