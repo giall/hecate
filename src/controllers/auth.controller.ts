@@ -25,7 +25,7 @@ export class AuthController extends KoaController {
 
   @Post('/login')
   @Validate(params({
-    email: Field.Password,
+    email: Field.Email,
     password: Field.Password
   }))
   async login(ctx: Context) {

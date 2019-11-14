@@ -18,7 +18,7 @@ const validators = {
     .required(),
   [Field.Email]: Validator.Joi.string()
     .email()
-    .max(254)
+    .max(100)
     .required(),
   [Field.Token]: Validator.Joi.string()
     .required()
