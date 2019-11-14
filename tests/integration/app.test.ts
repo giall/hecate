@@ -1,4 +1,5 @@
 import * as request from 'supertest';
+import * as crypto from 'crypto';
 import { App } from '../../src/app';
 import { Database } from '../../src/database/database';
 import { MongoMemoryServer } from 'mongodb-memory-server';
@@ -41,6 +42,8 @@ async function login() {
 }
 
 beforeAll(async () => {
+  console.log('Environment variables: ', process.env);
+  properties.jwt.secret = crypto.randomBytes(64).toString('hex');
   properties.logging.level = 'test';
   properties.options.emailVerificationRequired = false;
   mongod = new MongoMemoryServer({
