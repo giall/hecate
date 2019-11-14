@@ -18,3 +18,5 @@ jobs:
         npm test
       env:
         CI: true
+        LOG_LEVEL: test
+        JWT_SECRET: 8573a587c19d0f67551e03a6d249ca893e52889ee43ee23104ce1cd16670c60bf7e87c9921dc594899ee2656bb0a30e27
