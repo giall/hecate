@@ -41,10 +41,12 @@ export class AuthController extends KoaController {
       } else {
         this.setRateLimitHeaders(ctx, res);
         ctx.status = 401;
+        ctx.body = 'Invalid credentials.';
       }
     } else {
       this.setRateLimitHeaders(ctx, res);
       ctx.status = 429;
+      ctx.body = 'Too many attempts. Please try again later.';
     }
   }
 

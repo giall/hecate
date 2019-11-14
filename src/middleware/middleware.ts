@@ -1,6 +1,5 @@
 import { Logger } from '../logger/logger';
-import {RateLimiterMemory, RateLimiterMongo} from 'rate-limiter-flexible';
-import { Errors } from '../error/errors';
+import { AppError, Errors } from '../error/errors';
 
 import * as koaLogger from 'koa-logger';
 import { Token, Payload, TokenUtils } from '../utils/token.utils';
@@ -16,12 +15,17 @@ async function errorHandler(ctx, next) {
   try {
     await next();
   } catch (err) {
-    ctx.status = err.status || 500;
-    if (ctx.status === 500) {
-      ctx.log.error(err);
-      ctx.body = 'Something went wrong; please try again.';
-    } else {
+    if (err instanceof AppError) {
+      ctx.status = err.status;
       ctx.body = err.message;
+    } else if (err.name === 'ValidationError') {
+      ctx.log.info(err);
+      ctx.status = 400;
+      ctx.message = 'Invalid input.';
+    } else {
+      ctx.log.error(err);
+      ctx.status = 500;
+      ctx.body = 'Something went wrong; please try again.';
     }
   }
 }
