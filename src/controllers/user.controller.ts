@@ -70,7 +70,7 @@ export class UserController extends KoaController {
     email: Field.Email
   }))
   async resetPasswordRequest(ctx: Context) {
-    const {email} = ctx.body;
+    const {email} = ctx.request.body;
     await this.userService.resetPasswordRequest(email);
     ctx.status = 202;
   }

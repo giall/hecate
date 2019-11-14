@@ -17,16 +17,16 @@ interface LimiterRes {
 
 export class RateLimiter {
   private limiter: RateLimiterMongo;
-  private logger: Logger;
+  private log: Logger;
 
-  constructor(database: Database, logger: Logger) {
+  constructor(database: Database) {
     this.limiter = new RateLimiterMongo({
       storeClient: database.client,
       dbName: database.name,
       points: properties.limiter.retry.attempts,
       duration: properties.limiter.retry.interval
     });
-    this.logger = logger;
+    this.log = new Logger();
   }
 
   async limit(keys: LimiterKeys): Promise<LimiterRes> {
@@ -51,7 +51,7 @@ export class RateLimiter {
       await this.limiter.delete(keys.email);
       await this.limiter.delete(keys.ip);
     } catch (err) {
-      this.logger.warn(err);
+      this.log.warn(err);
     }
   }
 

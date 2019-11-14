@@ -8,11 +8,11 @@ import { Transporter } from '../mail/transporter';
 
 export class AuthService {
   private userRepository: UserRepository;
-  private logger: Logger;
+  private log: Logger;
   private transporter: Transporter;
 
   constructor(userRepository: UserRepository, transporter: Transporter) {
-    this.logger = new Logger();
+    this.log = new Logger();
     this.userRepository = userRepository;
     this.transporter = transporter;
   }
@@ -23,23 +23,29 @@ export class AuthService {
     const hash = user && user.hash || '.';
     const success = await compare(password, hash);
     if (!user) {
-      this.logger.warn(`User with email ${email} does not exist`);
+      this.log.warn(`User with email ${email} does not exist`);
     } else if (!success) {
-      this.logger.warn(`Invalid password for user with email ${email}`);
+      this.log.warn(`Invalid password for user with email ${email}`);
     }
     return success ? user : null;
   }
 
   async requestMagicLogin(email: string) {
     const user = await this.userRepository.find({email});
-    await this.userRepository.allowMagicLogin(user.id);
-    await this.transporter.magicLogin(user);
+    if (user) {
+      this.log.info(`Sending magic login email to userId=${user.id}`);
+      await this.userRepository.allowMagicLogin(user.id);
+      await this.transporter.magicLogin(user);
+    } else {
+      this.log.warn(`User with email=${email} does not exist, unable to send magic login link.`);
+    }
   }
 
   async magicLogin(userId: string) {
     const user = await this.userRepository.findById(userId);
     if (!user.allowMagicLogin) {
-      throw Errors.gone('magic login token has already been used');
+      this.log.warn(`Magic login token for userId=${userId} has already been used`);
+      throw Errors.gone('Invalid token.');
     }
     await this.userRepository.useMagicLogin(userId);
     return user;

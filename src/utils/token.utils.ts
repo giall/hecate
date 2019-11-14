@@ -2,6 +2,7 @@ import { sign, verify } from 'jsonwebtoken';
 import { Errors } from '../error/errors';
 import { User } from '../models/user';
 import { properties } from '../properties/properties';
+import { log } from '../logger/logger';
 
 export interface Payload {
   type: Token;
@@ -52,10 +53,12 @@ export class TokenUtils {
     try {
       payload = verify(token, this.secret) as Payload;
     } catch (err) {
-      throw Errors.unauthorized(`Invalid token: ${err.name}`);
+      log.warn(`Invalid token: ${err.name}`);
+      throw Errors.unauthorized('Invalid token.');
     }
     if (payload.type !== type) {
-      throw Errors.forbidden(`Token payload is of type ${payload.type} and not expected type ${type}`);
+      log.warn(`Token payload is of type ${payload.type} and not expected type ${type}`);
+      throw Errors.forbidden('Invalid token.');
     }
     return payload;
   }

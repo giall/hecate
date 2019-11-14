@@ -3,18 +3,24 @@ import { Collection, ObjectId } from 'mongodb';
 import { User } from '../models/user';
 import { hash } from 'bcrypt';
 import { Errors } from '../error/errors';
+import { Logger } from '../logger/logger';
 
 export class UserRepository {
 
+  private log: Logger;
   private collection: Collection;
 
   constructor(database: Database) {
+    this.log = new Logger();
     this.collection = database.getCollection('users');
   }
 
   async findById(id: string): Promise<User> {
     const entity = await this.collection.findOne(this.getFilter(id));
-    if (!entity) throw Errors.badRequest(`user with id=${id} does not exist`);
+    if (!entity) {
+      this.log.warn(`user with id=${id} does not exist`);
+      throw Errors.badRequest('Invalid user.');
+    }
     return User.from(entity);
   }
 
@@ -34,41 +40,41 @@ export class UserRepository {
 
   async changePassword(id: string, password: string) {
     return this.collection.updateOne(this.getFilter(id), {
-      $set: { hash: await hash(password, 10) }
+      $set: {hash: await hash(password, 10)}
     });
   }
 
   async changeEmail(id: string, email: string) {
     return this.collection.updateOne(this.getFilter(id), {
-      $set: { email, verified: false }
+      $set: {email, verified: false}
     });
   }
 
   async verifyEmail(id: string) {
     return this.collection.updateOne(this.getFilter(id), {
-      $set: { verified: true }
+      $set: {verified: true}
     });
   }
 
   async updateSessions(id: string, sessions: string[]) {
     return this.collection.updateOne(this.getFilter(id), {
-      $set: { sessions }
+      $set: {sessions}
     });
   }
 
   async allowMagicLogin(id: string) {
     return this.collection.updateOne(this.getFilter(id), {
-      $set: { allowMagicLogin: true }
+      $set: {allowMagicLogin: true}
     });
   }
 
   async useMagicLogin(id: string) {
     return this.collection.updateOne(this.getFilter(id), {
-      $set: { allowMagicLogin: false }
+      $set: {allowMagicLogin: false}
     });
   }
 
   private getFilter(id: string) {
-    return { _id: new ObjectId(id) };
+    return {_id: new ObjectId(id)};
   }
 }

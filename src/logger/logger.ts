@@ -2,30 +2,32 @@ import * as pino from 'pino';
 import { properties } from '../properties/properties';
 
 export class Logger {
-  private logger: pino.Logger | Console;
+  private log: pino.Logger | Console;
 
   constructor() {
     const { level } = properties.logging;
     if (level === 'test') {
-      this.logger = console;
+      this.log = console;
     } else {
-      this.logger = pino({level});
+      this.log = pino({level});
     }
   }
 
   debug(log: any, ...args: any[]) {
-    this.logger.debug(log, ...args);
+    this.log.debug(log, ...args);
   }
 
   info(log: any, ...args: any[]) {
-    this.logger.info(log, ...args);
+    this.log.info(log, ...args);
   }
 
   warn(log: any, ...args: any[]) {
-    this.logger.warn(log, ...args);
+    this.log.warn(log, ...args);
   }
 
   error(log: any, ...args: any[]) {
-    this.logger.error(log, ...args);
+    this.log.error(log, ...args);
   }
 }
+
+export const log = new Logger();

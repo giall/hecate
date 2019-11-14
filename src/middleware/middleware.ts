@@ -5,9 +5,9 @@ import { Errors } from '../error/errors';
 import * as koaLogger from 'koa-logger';
 import { Token, Payload, TokenUtils } from '../utils/token.utils';
 
-function ctxLogger(logger: Logger) {
+function ctxLogger(log: Logger) {
   return async function ctxLogger(ctx, next) {
-    ctx.log = logger;
+    ctx.log = log;
     await next();
   };
 }
@@ -19,15 +19,17 @@ async function errorHandler(ctx, next) {
     ctx.status = err.status || 500;
     if (ctx.status === 500) {
       ctx.log.error(err);
+      ctx.body = 'Something went wrong; please try again.';
+    } else {
+      ctx.body = err.message;
     }
-    else ctx.log.warn(err);
   }
 }
 
-function requestLogger(logger: Logger) {
+function requestLogger(log: Logger) {
   return koaLogger({
     transporter: (str) => {
-      logger.info(str);
+      log.info(str);
     }
   });
 }
@@ -40,7 +42,8 @@ async function access(ctx, next) {
     ctx.user = payload.id;
     await next();
   } else {
-    throw Errors.unauthorized('No access token included in request');
+    ctx.log.warn('No access token included in request');
+    throw Errors.unauthorized('Invalid token.');
   }
 }
 
@@ -54,7 +57,8 @@ async function refresh(ctx, next) {
     ctx.session = payload.session;
     await next();
   } else {
-    throw Errors.unauthorized('No refresh token included in request');
+    ctx.log.warn('No refresh token included in request');
+    throw Errors.unauthorized('Invalid token.');
   }
 }
 

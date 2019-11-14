@@ -7,16 +7,16 @@ export class Database {
   name: string;
 
   client: MongoClient;
-  logger: Logger;
+  log: Logger;
 
   constructor(uri: string) {
     this.uri = uri;
     this.name = properties.mongodb.name;
-    this.logger = new Logger();
+    this.log = new Logger();
   }
 
   async connect(): Promise<void> {
-    this.logger.info('Connecting to database...');
+    this.log.info('Connecting to database...');
 
     const options = {
       useNewUrlParser: true,
@@ -24,12 +24,12 @@ export class Database {
     };
     this.client = await new MongoClient(this.uri, options).connect();
 
-    this.logger.info('Successfully connected to database.');
+    this.log.info('Successfully connected to database.');
   }
 
   async disconnect(): Promise<void> {
     await this.client.close();
-    this.logger.info('Disconnected from database.');
+    this.log.info('Disconnected from database.');
   }
 
   getCollection(collection: string): Collection {

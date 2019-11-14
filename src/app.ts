@@ -19,11 +19,11 @@ import { UserService } from './services/user.service';
 export class App {
   server: Server;
   database: Database;
-  logger: Logger;
+  log: Logger;
 
   constructor(database: Database) {
     this.database = database;
-    this.logger = new Logger();
+    this.log = new Logger();
   }
 
   async bootstrap(): Promise<void> {
@@ -31,18 +31,18 @@ export class App {
 
     const app = new Koa();
     this.configureMiddleware(app, [
-      requestLogger(this.logger), ctxLogger(this.logger), errorHandler, cors(), helmet()
+      requestLogger(this.log), ctxLogger(this.log), errorHandler, cors(), helmet()
     ]);
 
     configureRoutes(app, this.controllers(), '/api');
 
     const port = process.env.NODE_PORT || 3000;
     this.server = app.listen(port);
-    this.logger.info(`Server running on port ${port}...`);
+    this.log.info(`Server running on port ${port}...`);
   }
 
   async terminate(): Promise<void> {
-    this.logger.info('Shutting down...');
+    this.log.info('Shutting down...');
     await this.database.disconnect();
     this.server.close();
   }
@@ -56,7 +56,7 @@ export class App {
     const transporter = new Transporter();
     const authService = new AuthService(userRepository, transporter);
     const userService = new UserService(userRepository, transporter);
-    const rateLimiter = new RateLimiter(this.database, this.logger);
+    const rateLimiter = new RateLimiter(this.database);
     return [
       new AuthController(userRepository, authService, rateLimiter),
       new UserController(userService)

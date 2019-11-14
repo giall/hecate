@@ -8,22 +8,22 @@ import { properties } from '../properties/properties';
 
 export class UserService {
   private userRepository: UserRepository;
-  private logger: Logger;
+  private log: Logger;
   private transporter: Transporter;
 
   constructor(userRepository: UserRepository, transporter: Transporter) {
-    this.logger = new Logger();
+    this.log = new Logger();
     this.userRepository = userRepository;
     this.transporter = transporter;
   }
 
   async register(credentials: Credentials): Promise<User> {
     const { username, email } = credentials;
-    this.logger.info(`Registering user: ${username} with email: ${email}`);
+    this.log.info(`Registering user: ${username} with email: ${email}`);
     await this.checkForConflicts(credentials);
 
     const user = await this.userRepository.create(User.create(credentials));
-    this.logger.info(`User ${username} created successfully.`);
+    this.log.info(`User ${username} created successfully.`);
     this.sendVerificationEmail(user);
     return user;
   }
@@ -31,7 +31,8 @@ export class UserService {
   async verifyEmail(userId: string) {
     const user = await this.userRepository.findById(userId);
     if (user.verified) {
-      throw Errors.gone(`User with id=${userId} has already verified their email`);
+      this.log.warn(`User with id=${userId} has already verified their email`);
+      throw Errors.gone('Invalid token.');
     }
     await this.userRepository.verifyEmail(userId);
   }
@@ -39,7 +40,7 @@ export class UserService {
   async changeEmail(userId: string, email: string, password: string) {
     const user = await this.userRepository.findById(userId);
     if (user.email === email) {
-      throw Errors.badRequest('Old and new email addresses are the same');
+      throw Errors.badRequest('Old and new email addresses cannot be the same.');
     }
     this.verifyPassword(user, password);
     await this.userRepository.changeEmail(userId, email);
@@ -49,7 +50,8 @@ export class UserService {
   async resetPassword(userId: string, hash: string, newPassword: string) {
     const user = await this.userRepository.findById(userId);
     if (user.hash !== hash) {
-      throw Errors.gone(`Current hash for user with id=${userId} does not match with the one in the token`);
+      this.log.warn(`Current hash for user with id=${userId} does not match with the one in the token`);
+      throw Errors.gone('Invalid token.');
     }
     await this.userRepository.changePassword(userId, newPassword);
   }
@@ -57,20 +59,20 @@ export class UserService {
   async resetPasswordRequest(email: string) {
     const user = await this.userRepository.find({email});
     if (user) {
-      this.logger.info(`Sending password reset email to ${email}`);
+      this.log.info(`Sending password reset email to ${email}`);
       await this.transporter.passwordReset(user);
     } else {
-      this.logger.warn(`Cannot reset password; no account with email ${email}`);
+      this.log.warn(`Cannot reset password; no account with email ${email}`);
     }
   }
 
   async changePassword(userId: string, oldPassword: string, newPassword: string) {
     if (oldPassword === newPassword) {
-      throw Errors.badRequest('Old and new passwords are the same');
+      throw Errors.badRequest('Old and new passwords cannot be the same.');
     }
     const user = await this.userRepository.findById(userId);
     this.verifyPassword(user, oldPassword);
-    this.logger.info(`Changing password for userId=${userId}`);
+    this.log.info(`Changing password for userId=${userId}`);
     await this.userRepository.changePassword(userId, newPassword);
   }
 
@@ -84,17 +86,19 @@ export class UserService {
     const { username, email } = credentials;
     let user = await this.userRepository.find({username});
     if (user) {
-      throw Errors.conflict(`User with username: ${username} already exists`);
+      this.log.info(`User with username: ${username} already exists`);
+      throw Errors.conflict('A user with this username already exists.');
     }
     user = await this.userRepository.find({email});
     if (user) {
-      throw Errors.conflict(`User with email: ${email} already exists`);
+      this.log.info(`User with email: ${email} already exists`);
+      throw Errors.conflict('A user with this email already exists.');
     }
   }
 
   private async sendVerificationEmail(user: User) {
     if (properties.options.emailVerificationRequired) {
-      this.logger.info(`Sending email to ${user.email} for verification`);
+      this.log.info(`Sending email to ${user.email} for verification`);
       await this.transporter.emailVerification(user);
     }
   }
@@ -102,7 +106,8 @@ export class UserService {
   private verifyPassword(user: User, password: string) {
     const success = compareSync(password, user.hash);
     if (!success) {
-      throw Errors.unauthorized('Invalid password');
+      this.log.warn(`Invalid password for userId=${user.id}`);
+      throw Errors.unauthorized('Invalid credentials.');
     }
   }
 }

@@ -125,7 +125,7 @@ export class AuthController extends KoaController {
 
   private validateSession(session, sessions) {
     if (!sessions.includes(session)) {
-      throw Errors.forbidden('invalid session');
+      throw Errors.forbidden('Invalid token.');
     }
   }
 
