@@ -2,6 +2,7 @@ import * as nodemailer from 'nodemailer';
 import { properties } from '../properties/properties';
 import { User } from '../models/user';
 import { TokenUtils } from '../utils/token.utils';
+import { log } from '../logger/logger';
 
 export class Transporter {
   transporter: nodemailer.Transporter;
@@ -19,6 +20,7 @@ export class Transporter {
   async emailVerification(user: User) {
     const token = TokenUtils.emailVerification(user);
     const emailVerificationUrl = `${properties.web.host}/${properties.web.endpoints.emailVerification}?token=${token}`;
+    log.debug(`Email verification url: ${emailVerificationUrl}`);
     const appName = properties.app.name;
     await this.transporter.sendMail({
       from: `"${appName}" <hello@giall.dev>`,
@@ -34,6 +36,7 @@ export class Transporter {
   async passwordReset(user: User) {
     const token = TokenUtils.passwordReset(user);
     const passwordResetUrl = `${properties.web.host}/${properties.web.endpoints.passwordReset}?token=${token}`;
+    log.debug(`Password reset url: ${passwordResetUrl}`);
     const appName = properties.app.name;
     await this.transporter.sendMail({
       from: `"${appName} <hello@giall.dev>"`,
@@ -52,6 +55,7 @@ export class Transporter {
   async magicLogin(user: User) {
     const token = TokenUtils.magicLogin(user);
     const magicLoginUrl = `${properties.web.host}/${properties.web.endpoints.magicLogin}?token=${token}`;
+    log.debug(`Magic login url: ${magicLoginUrl}`);
     const appName = properties.app.name;
     await this.transporter.sendMail({
       from: `"${appName}" <hello@giall.dev>`,

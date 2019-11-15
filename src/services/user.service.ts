@@ -44,6 +44,7 @@ export class UserService {
     }
     this.verifyPassword(user, password);
     await this.userRepository.changeEmail(userId, email);
+    this.log.info(`Changed email for userId=${userId}`);
     this.sendVerificationEmail(user);
   }
 
@@ -54,6 +55,7 @@ export class UserService {
       throw Errors.gone('Invalid token.');
     }
     await this.userRepository.changePassword(userId, newPassword);
+    this.log.info(`Reset password for userId=${userId}`);
   }
 
   async resetPasswordRequest(email: string) {
@@ -72,8 +74,8 @@ export class UserService {
     }
     const user = await this.userRepository.findById(userId);
     this.verifyPassword(user, oldPassword);
-    this.log.info(`Changing password for userId=${userId}`);
     await this.userRepository.changePassword(userId, newPassword);
+    this.log.info(`Changed password for userId=${userId}`);
   }
 
   async deleteUser(userId: string, password: string) {

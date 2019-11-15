@@ -42,8 +42,8 @@ export const properties = {
     host: 'http://localhost:4200',
     endpoints: {
       emailVerification: 'verify',
-      passwordReset: 'reset',
-      magicLogin: 'one.time/login'
+      passwordReset: 'password-reset',
+      magicLogin: 'token-login'
     }
   },
   options: {
