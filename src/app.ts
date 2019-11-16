@@ -12,7 +12,7 @@ import { RateLimiter } from './rate.limiter/rate.limiter';
 import { AuthController } from './controllers/auth.controller';
 import { UserController } from './controllers/user.controller';
 import { UserService } from './services/user.service';
-import { TestController } from './controllers/test.controller';
+import { RootController } from './controllers/root.controller';
 
 export class App {
   database: Database;
@@ -56,7 +56,7 @@ export class App {
     return [
       new AuthController(userRepository, authService, rateLimiter),
       new UserController(userService),
-      new TestController()
+      new RootController()
     ];
   }
 }
