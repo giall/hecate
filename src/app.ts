@@ -1,8 +1,5 @@
 import * as Koa from 'koa';
-import * as helmet from 'koa-helmet';
-import * as cors from '@koa/cors';
 
-import { Server } from 'http';
 import { configureRoutes, KoaController } from 'koa-joi-controllers';
 import { Database } from './database/database';
 import { UserRepository } from './repositories/user.repository';
@@ -15,9 +12,9 @@ import { RateLimiter } from './rate.limiter/rate.limiter';
 import { AuthController } from './controllers/auth.controller';
 import { UserController } from './controllers/user.controller';
 import { UserService } from './services/user.service';
+import { TestController } from './controllers/test.controller';
 
 export class App {
-  server: Server;
   database: Database;
   log: Logger;
 
@@ -26,25 +23,24 @@ export class App {
     this.log = new Logger();
   }
 
-  async bootstrap(): Promise<void> {
-    await this.database.connect();
-
+  bootstrap(): (req, res) => void {
+    this.log.info('Bootstrapping app...');
     const app = new Koa();
+    this.log.info('Environment: ', process.env.NODE_ENV);
+
     this.configureMiddleware(app, [
-      requestLogger(this.log), ctxLogger(this.log), errorHandler, cors(), helmet()
+      requestLogger(this.log), ctxLogger(this.log), errorHandler
     ]);
 
-    configureRoutes(app, this.controllers(), '/api');
-
-    const port = process.env.NODE_PORT || 3000;
-    this.server = app.listen(port);
-    this.log.info(`Server running on port ${port}...`);
+    this.database.connect().then(() => {
+      configureRoutes(app, this.controllers(), '/api');
+    });
+    return app.callback();
   }
 
   async terminate(): Promise<void> {
     this.log.info('Shutting down...');
     await this.database.disconnect();
-    this.server.close();
   }
 
   private configureMiddleware(app: Koa, middleware: Middleware[]) {
@@ -59,7 +55,8 @@ export class App {
     const rateLimiter = new RateLimiter(this.database);
     return [
       new AuthController(userRepository, authService, rateLimiter),
-      new UserController(userService)
+      new UserController(userService),
+      new TestController()
     ];
   }
 }

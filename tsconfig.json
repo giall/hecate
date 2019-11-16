@@ -1,14 +1,14 @@
 {
   "compilerOptions": {
-      "module": "commonjs",
-      "target": "es2017",
-      "outDir": "./dist",
-      "declaration": true,
-      "sourceMap": true,
-      "emitDecoratorMetadata": true,
-      "experimentalDecorators": true
+    "module": "commonjs",
+    "target": "es2017",
+    "outDir": "./dist",
+    "declaration": false,
+    "sourceMap": false,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true
   },
   "include": [
-      "./src/**/*"
+    "./src/**/*"
   ]
 }

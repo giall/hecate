@@ -82,6 +82,7 @@ export class UserService {
     const user = await this.userRepository.findById(userId);
     this.verifyPassword(user, password);
     await this.userRepository.remove(userId);
+    this.log.info(`Delete userId=${userId}`);
   }
 
   private async checkForConflicts(credentials: Credentials) {
