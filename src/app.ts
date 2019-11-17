@@ -1,6 +1,7 @@
 import * as Koa from 'koa';
-import { Server } from 'http';
+import * as helmet from 'koa-helmet';
 
+import { Server } from 'http';
 import { configureRoutes, KoaController } from 'koa-joi-controllers';
 import { Database } from './database/database';
 import { UserRepository } from './repositories/user.repository';
@@ -30,7 +31,7 @@ export class App {
     const app = new Koa();
     await this.database.connect();
     this.configureMiddleware(app, [
-      requestLogger(this.log), ctxLogger(this.log), errorHandler
+      requestLogger(this.log), ctxLogger(this.log), errorHandler, helmet()
     ]);
     configureRoutes(app, this.controllers(), '/api');
 

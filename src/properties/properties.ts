@@ -1,6 +1,6 @@
-import { config } from 'dotenv';
-
-config();
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config();
+}
 
 export const properties = {
   logging: {
@@ -18,7 +18,7 @@ export const properties = {
   },
   mongodb: {
     url: process.env.MONGODB_URL,
-    name: process.env.MONGODB_NAME,
+    name: process.env.MONGODB_NAME || 'hecate',
     user: process.env.MONGODB_USER,
     password: process.env.MONGODB_PASSWORD
   },

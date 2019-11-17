@@ -8,3 +8,5 @@ coverage/
 db.sqlite
 
 .idea
+
+app.yaml
