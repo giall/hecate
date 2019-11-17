@@ -29,6 +29,10 @@ export const properties = {
       pass: process.env.SMTP_PASS
     }
   },
+  mailjet: {
+    username: process.env.MJ_APIKEY_PUBLIC,
+    password: process.env.MJ_APIKEY_PRIVATE
+  },
   limiter: {
     retry: {
       attempts: 5,
@@ -42,7 +46,8 @@ export const properties = {
     }
   },
   app: {
-    name: 'Hecate'
+    name: process.env.APP_NAME || 'Hecate',
+    email: process.env.APP_EMAIL
   },
   web: {
     host: 'http://localhost:4200',
@@ -53,6 +58,6 @@ export const properties = {
     }
   },
   options: {
-    emailVerificationRequired: false
+    emailVerificationRequired: true
   }
 };

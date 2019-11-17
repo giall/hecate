@@ -9,21 +9,25 @@ import { AuthService } from './services/auth.service';
 import { Logger } from './logger/logger';
 import { ctxLogger, errorHandler, requestLogger } from './middleware/middleware';
 import { Middleware } from 'koa';
-import { Transporter } from './mail/transporter';
 import { RateLimiter } from './rate.limiter/rate.limiter';
 import { AuthController } from './controllers/auth.controller';
 import { UserController } from './controllers/user.controller';
 import { UserService } from './services/user.service';
 import { RootController } from './controllers/root.controller';
+import { Transporter } from './transporter/transporter';
+import { MailService } from './services/mail.service';
 
 export class App {
-  server: Server;
-  database: Database;
   log: Logger;
 
-  constructor(database: Database) {
-    this.database = database;
+  server: Server;
+  database: Database;
+  mail: MailService;
+
+  constructor(database: Database, transporter: Transporter) {
     this.log = new Logger();
+    this.database = database;
+    this.mail = new MailService(transporter);
   }
 
   async bootstrap(): Promise<void> {
@@ -52,9 +56,8 @@ export class App {
 
   private controllers(): KoaController[] {
     const userRepository = new UserRepository(this.database);
-    const transporter = new Transporter();
-    const authService = new AuthService(userRepository, transporter);
-    const userService = new UserService(userRepository, transporter);
+    const authService = new AuthService(userRepository, this.mail);
+    const userService = new UserService(userRepository, this.mail);
     const rateLimiter = new RateLimiter(this.database);
     return [
       new AuthController(userRepository, authService, rateLimiter),

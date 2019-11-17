@@ -1,5 +1,4 @@
 import * as request from 'supertest';
-import { Server } from 'http';
 
 import { App } from '../../src/app';
 import { Database } from '../../src/database/database';
@@ -10,11 +9,12 @@ import { TokenUtils } from '../../src/utils/token.utils';
 import { chance } from '../utils/chance';
 import { v4 as uuid } from 'uuid';
 import { UserRepository } from '../../src/repositories/user.repository';
+import { DummyTransporter } from '../mocks/dummy.transporter';
 
 let app: App;
-let server: Server;
 let mongod: MongoMemoryServer;
 let database: Database;
+let transporter: DummyTransporter;
 
 let user: User;
 const userDetails = {
@@ -45,7 +45,7 @@ async function login() {
 
 async function run() {
   properties.logging.level = 'test';
-  properties.options.emailVerificationRequired = false;
+  properties.options.emailVerificationRequired = true;
   mongod = new MongoMemoryServer({
     instance: {
       dbName: 'hecate'
@@ -53,7 +53,8 @@ async function run() {
   });
   const dbUri = await mongod.getConnectionString();
   database = new Database(dbUri);
-  app = new App(database);
+  transporter = new DummyTransporter();
+  app = new App(database, transporter);
   await app.bootstrap();
 }
 
@@ -70,6 +71,13 @@ afterAll(async () => {
   await mongod.stop();
 });
 
+describe('/api/ping', () => {
+  test('Should return OK', async () => {
+    const response = await request(app.server).get('/api/ping');
+    expect(response.status).toEqual(200);
+  });
+});
+
 describe('/api/user/register', () => {
   const endpoint = '/api/user/register';
   const username = chance.username();
@@ -84,6 +92,7 @@ describe('/api/user/register', () => {
         password: chance.password()
       });
     expect(response.status).toEqual(201);
+    transporter.assertEmailSent();
   });
 
   test('Should fail if email already exists', async () => {
@@ -274,6 +283,28 @@ describe('/api/auth/magic.login', () => {
   });
 });
 
+describe('/api/auth/magic.login/request', () => {
+  const endpoint = '/api/auth/magic.login/request';
+
+  test('Should not send email if user does not exist', async () => {
+    const response = await request(app.server).post(endpoint)
+      .send({
+        email: chance.email()
+      });
+    expect(response.status).toEqual(202);
+    transporter.assertNoEmailSent();
+  });
+
+  test('Should send magic login email', async () => {
+    const response = await request(app.server).post(endpoint)
+      .send({
+        email: user.email
+      });
+    expect(response.status).toEqual(202);
+    transporter.assertEmailSent();
+  });
+});
+
 describe('/api/user/password/reset', () => {
   const endpoint = '/api/user/password/reset';
   const newPassword = chance.password();
@@ -300,6 +331,28 @@ describe('/api/user/password/reset', () => {
 
     userDetails.password = newPassword;
     await login();
+  });
+});
+
+describe('/api/user/password/reset/request', () => {
+  const endpoint = '/api/user/password/reset/request';
+
+  test('Should not send email if user does not exist', async () => {
+    const response = await request(app.server).post(endpoint)
+      .send({
+        email: chance.email()
+      });
+    expect(response.status).toEqual(202);
+    transporter.assertNoEmailSent();
+  });
+
+  test('Should send password reset email', async () => {
+    const response = await request(app.server).post(endpoint)
+      .send({
+        email: user.email
+      });
+    expect(response.status).toEqual(202);
+    transporter.assertEmailSent();
   });
 });
 

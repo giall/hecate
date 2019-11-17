@@ -4,17 +4,19 @@ import { Errors } from '../error/errors';
 import { User } from '../models/user';
 import { v4 as uuid } from 'uuid';
 import { compare } from 'bcrypt';
-import { Transporter } from '../mail/transporter';
+import { MailService } from './mail.service';
 
 export class AuthService {
-  private userRepository: UserRepository;
   private log: Logger;
-  private transporter: Transporter;
 
-  constructor(userRepository: UserRepository, transporter: Transporter) {
+  private userRepository: UserRepository;
+  private mailService: MailService;
+
+  constructor(userRepository: UserRepository, mail: MailService) {
     this.log = new Logger();
+
     this.userRepository = userRepository;
-    this.transporter = transporter;
+    this.mailService = mail;
   }
 
   async login(email: string, password: string): Promise<User> {
@@ -35,7 +37,7 @@ export class AuthService {
     if (user) {
       this.log.info(`Sending magic login email to userId=${user.id}`);
       await this.userRepository.allowMagicLogin(user.id);
-      await this.transporter.magicLogin(user);
+      await this.mailService.magicLogin(user);
     } else {
       this.log.warn(`User with email=${email} does not exist, unable to send magic login link.`);
     }

@@ -3,18 +3,20 @@ import { Logger } from '../logger/logger';
 import { Credentials, User } from '../models/user';
 import { Errors } from '../error/errors';
 import { compareSync } from 'bcrypt';
-import { Transporter } from '../mail/transporter';
 import { properties } from '../properties/properties';
+import { MailService } from './mail.service';
 
 export class UserService {
-  private userRepository: UserRepository;
   private log: Logger;
-  private transporter: Transporter;
 
-  constructor(userRepository: UserRepository, transporter: Transporter) {
+  private userRepository: UserRepository;
+  private mailService: MailService;
+
+  constructor(userRepository: UserRepository, mailService: MailService) {
     this.log = new Logger();
+
     this.userRepository = userRepository;
-    this.transporter = transporter;
+    this.mailService = mailService;
   }
 
   async register(credentials: Credentials): Promise<User> {
@@ -62,7 +64,7 @@ export class UserService {
     const user = await this.userRepository.find({email});
     if (user) {
       this.log.info(`Sending password reset email to ${email}`);
-      await this.transporter.passwordReset(user);
+      await this.mailService.passwordReset(user);
     } else {
       this.log.warn(`Cannot reset password; no account with email ${email}`);
     }
@@ -102,7 +104,7 @@ export class UserService {
   private async sendVerificationEmail(user: User) {
     if (properties.options.emailVerificationRequired) {
       this.log.info(`Sending email to ${user.email} for verification`);
-      await this.transporter.emailVerification(user);
+      await this.mailService.emailVerification(user);
     }
   }
 
