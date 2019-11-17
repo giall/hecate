@@ -1,6 +1,5 @@
 import * as request from 'supertest';
-import * as http from 'http';
-import * as util from 'util';
+import { Server } from 'http';
 
 import { App } from '../../src/app';
 import { Database } from '../../src/database/database';
@@ -11,7 +10,6 @@ import { TokenUtils } from '../../src/utils/token.utils';
 import { chance } from '../utils/chance';
 import { v4 as uuid } from 'uuid';
 import { UserRepository } from '../../src/repositories/user.repository';
-import { Server } from 'http';
 
 let app: App;
 let server: Server;
@@ -37,15 +35,13 @@ async function getUser(): Promise<User> {
 }
 
 async function login() {
-  const response = await request(server).post('/api/auth/login')
+  const response = await request(app.server).post('/api/auth/login')
     .send({
       email: userDetails.email,
       password: userDetails.password
     });
   expect(response.status).toEqual(200);
 }
-
-const sleep = util.promisify(setTimeout);
 
 async function run() {
   properties.logging.level = 'test';
@@ -58,14 +54,12 @@ async function run() {
   const dbUri = await mongod.getConnectionString();
   database = new Database(dbUri);
   app = new App(database);
-  const callback = app.bootstrap();
-  return http.createServer(callback).listen(3001);
+  await app.bootstrap();
 }
 
 beforeAll(async () => {
-  server = await run();
-  await sleep(3000);
-  await request(server)
+  await run();
+  await request(app.server)
     .post('/api/user/register')
     .send(userDetails);
   user = await getUser();
@@ -74,7 +68,6 @@ beforeAll(async () => {
 afterAll(async () => {
   await app.terminate();
   await mongod.stop();
-  server.close();
 });
 
 describe('/api/user/register', () => {
@@ -83,7 +76,7 @@ describe('/api/user/register', () => {
   const email = chance.email();
 
   test('Should register user successfully', async () => {
-    const response = await request(server)
+    const response = await request(app.server)
       .post(endpoint)
       .send({
         username: username,
@@ -94,7 +87,7 @@ describe('/api/user/register', () => {
   });
 
   test('Should fail if email already exists', async () => {
-    const response = await request(server)
+    const response = await request(app.server)
       .post(endpoint)
       .send({
         username: chance.username(),
@@ -105,7 +98,7 @@ describe('/api/user/register', () => {
   });
 
   test('Should fail if username already exists', async () => {
-    const response = await request(server)
+    const response = await request(app.server)
       .post(endpoint)
       .send({
         username: username,
@@ -120,7 +113,7 @@ describe('/api/auth/login', () => {
   const endpoint = '/api/auth/login';
 
   test('Should fail if password is incorrect', async () => {
-    const response = await request(server).post(endpoint).send({
+    const response = await request(app.server).post(endpoint).send({
       email: userDetails.email,
       password: chance.password()
     });
@@ -129,7 +122,7 @@ describe('/api/auth/login', () => {
   });
 
   test('Should fail if user does not exist', async () => {
-    const response = await request(server).post(endpoint).send({
+    const response = await request(app.server).post(endpoint).send({
       email: chance.emailAddress(),
       password: userDetails.password
     });
@@ -138,7 +131,7 @@ describe('/api/auth/login', () => {
   });
 
   test('Should be successful', async () => {
-    const response = await request(server).post(endpoint).send({
+    const response = await request(app.server).post(endpoint).send({
       email: userDetails.email,
       password: userDetails.password
     });
@@ -161,20 +154,20 @@ describe('/api/auth/refresh', () => {
   });
 
   test('Should fail if there is no refresh token', async () => {
-    const response = await request(server).post(endpoint);
+    const response = await request(app.server).post(endpoint);
     expect(response.status).toEqual(401);
   });
 
   test('Should fail if session is invalid', async () => {
     cookie = `refresh=${TokenUtils.refresh(user, uuid())}`;
-    const response = await request(server).post(endpoint).set('Cookie', cookie);
+    const response = await request(app.server).post(endpoint).set('Cookie', cookie);
     expect(response.status).toEqual(403);
   });
 
   test('Should refresh session successfully', async () => {
     const [sessionId] = user.sessions;
     cookie = `refresh=${TokenUtils.refresh(user, sessionId)}`;
-    const response = await request(server).post(endpoint).set('Cookie', cookie);
+    const response = await request(app.server).post(endpoint).set('Cookie', cookie);
     expect(response.status).toEqual(200);
 
     user = await getUser();
@@ -191,7 +184,7 @@ describe('/api/auth/logout', () => {
   });
 
   test('Should fail if there is no refresh token', async () => {
-    const response = await request(server).post(endpoint);
+    const response = await request(app.server).post(endpoint);
     expect(response.status).toEqual(401);
   });
 
@@ -200,7 +193,7 @@ describe('/api/auth/logout', () => {
     expect(sessionId).toBeDefined();
     const cookie = `refresh=${TokenUtils.refresh(user, sessionId)}`;
 
-    const response = await request(server).post(endpoint).set('Cookie', cookie);
+    const response = await request(app.server).post(endpoint).set('Cookie', cookie);
     expect(response.status).toEqual(204);
 
     const updatedUser = await getUser();
@@ -217,7 +210,7 @@ describe('/api/auth/invalidate', () => {
   });
 
   test('Should fail if there is no refresh token', async () => {
-    const response = await request(server).post(endpoint);
+    const response = await request(app.server).post(endpoint);
     expect(response.status).toEqual(401);
   });
 
@@ -226,7 +219,7 @@ describe('/api/auth/invalidate', () => {
     expect(sessionId).toBeDefined();
     const cookie = `refresh=${TokenUtils.refresh(user, sessionId)}`;
 
-    const response = await request(server).post(endpoint).set('Cookie', cookie);
+    const response = await request(app.server).post(endpoint).set('Cookie', cookie);
     expect(response.status).toEqual(204);
 
     const updatedUser = await getUser();
@@ -238,7 +231,7 @@ describe('/api/auth/magic.login', () => {
   const endpoint = '/api/auth/magic.login';
 
   test('Should fail if token user is not valid', async () => {
-    const response = await request(server).post(endpoint)
+    const response = await request(app.server).post(endpoint)
       .send({
         token: chance.string({length: 48})
       });
@@ -246,7 +239,7 @@ describe('/api/auth/magic.login', () => {
   });
 
   test('Should fail if token is not of magic login type', async () => {
-    const response = await request(server).post(endpoint)
+    const response = await request(app.server).post(endpoint)
       .send({
         token: TokenUtils.passwordReset(user)
       });
@@ -254,7 +247,7 @@ describe('/api/auth/magic.login', () => {
   });
 
   test('Should fail if token user ID is not valid', async () => {
-    const response = await request(server).post(endpoint)
+    const response = await request(app.server).post(endpoint)
       .send({
         token: TokenUtils.magicLogin({
           id: chance.string({length: 12})
@@ -265,7 +258,7 @@ describe('/api/auth/magic.login', () => {
 
   test('Should login successfully', async () => {
     await new UserRepository(database).allowMagicLogin(user.id);
-    const response = await request(server).post(endpoint)
+    const response = await request(app.server).post(endpoint)
       .send({
         token: TokenUtils.magicLogin(user)
       });
@@ -273,7 +266,7 @@ describe('/api/auth/magic.login', () => {
   });
 
   test('Should fail if magic login is not allowed', async () => {
-    const response = await request(server).post(endpoint)
+    const response = await request(app.server).post(endpoint)
       .send({
         token: TokenUtils.magicLogin(user)
       });
@@ -286,7 +279,7 @@ describe('/api/user/password/reset', () => {
   const newPassword = chance.password();
 
   test('Should fail if token hash does not match user hash', async () => {
-    const response = await request(server).put(endpoint)
+    const response = await request(app.server).put(endpoint)
       .send({
         token: TokenUtils.passwordReset({
           id: user.id,
@@ -298,7 +291,7 @@ describe('/api/user/password/reset', () => {
   });
 
   test('Should reset password', async () => {
-    const response = await request(server).put(endpoint)
+    const response = await request(app.server).put(endpoint)
       .send({
         token: TokenUtils.passwordReset(user),
         newPassword: newPassword
@@ -320,12 +313,12 @@ describe('/api/user/password/change', () => {
   });
 
   test('Should fail if there is no access token', async () => {
-    const response = await request(server).put(endpoint);
+    const response = await request(app.server).put(endpoint);
     expect(response.status).toEqual(401);
   });
 
   test('Should fail if old and new passwords are the same', async () => {
-    const response = await request(server).put(endpoint)
+    const response = await request(app.server).put(endpoint)
       .set('Cookie', cookie)
       .send({
         oldPassword: userDetails.password,
@@ -335,7 +328,7 @@ describe('/api/user/password/change', () => {
   });
 
   test('Should fail if password is invalid', async () => {
-    const response = await request(server).put(endpoint)
+    const response = await request(app.server).put(endpoint)
       .set('Cookie', cookie)
       .send({
         oldPassword: chance.password(),
@@ -345,7 +338,7 @@ describe('/api/user/password/change', () => {
   });
 
   test('Should change user password', async () => {
-    const response = await request(server).put(endpoint)
+    const response = await request(app.server).put(endpoint)
       .set('Cookie', cookie)
       .send({
         oldPassword: userDetails.password,
@@ -362,7 +355,7 @@ describe('/api/user/email/verification', () => {
   const endpoint = '/api/user/email/verification';
 
   test('Should verify user', async () => {
-    const response = await request(server).put(endpoint).send({
+    const response = await request(app.server).put(endpoint).send({
       token: TokenUtils.emailVerification(user)
     });
     expect(response.status).toEqual(204);
@@ -371,7 +364,7 @@ describe('/api/user/email/verification', () => {
   });
 
   test('Should fail if user is already verified', async () => {
-    const response = await request(server).put(endpoint).send({
+    const response = await request(app.server).put(endpoint).send({
       token: TokenUtils.emailVerification(user)
     });
     expect(response.status).toEqual(410);
@@ -387,12 +380,12 @@ describe('/api/user/email/change', () => {
   });
 
   test('Should fail if there is no access token', async () => {
-    const response = await request(server).put(endpoint);
+    const response = await request(app.server).put(endpoint);
     expect(response.status).toEqual(401);
   });
 
   test('Should fail if new and old emails are the same', async () => {
-    const response = await request(server).put(endpoint)
+    const response = await request(app.server).put(endpoint)
       .set('Cookie', cookie)
       .send({
         email: userDetails.email,
@@ -402,7 +395,7 @@ describe('/api/user/email/change', () => {
   });
 
   test('Should fail if invalid password', async () => {
-    const response = await request(server).put(endpoint)
+    const response = await request(app.server).put(endpoint)
       .set('Cookie', cookie)
       .send({
         email: chance.emailAddress(),
@@ -413,7 +406,7 @@ describe('/api/user/email/change', () => {
 
   test('Should change user email and unverify', async () => {
     const newEmail = chance.emailAddress();
-    const response = await request(server).put(endpoint)
+    const response = await request(app.server).put(endpoint)
       .set('Cookie', cookie)
       .send({
         email: newEmail,
@@ -443,11 +436,11 @@ describe('/api/auth/login [Rate Limit]', () => {
     };
     const attempts = properties.limiter.retry.attempts;
     for (let attempt = 1; attempt <= attempts; attempt++) {
-      const response = await request(server).post(endpoint).send(data);
+      const response = await request(app.server).post(endpoint).send(data);
       expect(response.status).toEqual(401);
       validateRateLimitHeaders(response.header, attempts, attempts - attempt);
     }
-    const response = await request(server).post(endpoint).send(data);
+    const response = await request(app.server).post(endpoint).send(data);
     expect(response.status).toEqual(429);
     validateRateLimitHeaders(response.header, attempts, 0);
   });
@@ -462,12 +455,12 @@ describe('/api/user/delete', () => {
   });
 
   test('Should fail if there is no access token', async () => {
-    const response = await request(server).put(endpoint);
+    const response = await request(app.server).put(endpoint);
     expect(response.status).toEqual(401);
   });
 
   test('Should fail if password is invalid', async () => {
-    const response = await request(server).put(endpoint)
+    const response = await request(app.server).put(endpoint)
       .set('Cookie', cookie)
       .send({
         password: chance.password()
@@ -476,7 +469,7 @@ describe('/api/user/delete', () => {
   });
 
   test('Should delete user', async () => {
-    const response = await request(server).put(endpoint)
+    const response = await request(app.server).put(endpoint)
       .set('Cookie', cookie)
       .send({
         password: userDetails.password

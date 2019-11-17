@@ -65,7 +65,7 @@ export class TokenUtils {
 
   private static token(data: {id: string; session?: string; hash?: string}, type: Token): string {
     const options = {
-      expiresIn: properties.jwt.expirations[type]
+      expiresIn: properties.jwt.expiration[type]
     };
     const payload: Payload = {
       ...data, type

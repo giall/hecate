@@ -8,6 +8,7 @@ import { AuthService } from '../services/auth.service';
 import { Token, TokenUtils } from '../utils/token.utils';
 import { Errors } from '../error/errors';
 import { refresh } from '../middleware/middleware';
+import { properties } from '../properties/properties';
 
 @Controller('/auth')
 export class AuthController extends KoaController {
@@ -110,14 +111,12 @@ export class AuthController extends KoaController {
   }
 
   private async setAuthTokens(ctx: Context, user: User) {
-    const options = {secure: false, httpOnly: false};
-
     const accessToken = TokenUtils.access(user);
-    ctx.cookies.set(Token.Access, accessToken, options);
+    ctx.cookies.set(Token.Access, accessToken, properties.cookie.options);
 
     const session = await this.authService.addSession(user.id);
     const refreshToken = TokenUtils.refresh(user, session);
-    ctx.cookies.set(Token.Refresh, refreshToken, options);
+    ctx.cookies.set(Token.Refresh, refreshToken, properties.cookie.options);
   }
 
   private clearAuthTokens(ctx: Context) {

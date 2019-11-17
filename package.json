@@ -3,11 +3,12 @@
   "version": "1.0.0",
   "description": "Authentication service built with NodeJS",
   "scripts": {
+    "start": "node main.js",
     "watch": "ts-node-dev src/main.ts | npx pino-pretty",
     "lint": "eslint --fix ./**/*.ts",
-    "build": "tsc && copyfiles package.json dist",
+    "build": "tsc && copyfiles package.json .env favicon.ico app.yaml .gcloudignore dist",
     "test": "jest",
-    "deploy": "gcloud functions deploy auth --runtime nodejs8 --trigger-http --env-vars-file .env.yaml --memory 128 --timeout 10"
+    "deploy": "gcloud app deploy"
   },
   "keywords": [
     "koa",

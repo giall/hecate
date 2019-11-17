@@ -8,7 +8,7 @@ export const properties = {
   },
   jwt: {
     secret: process.env.JWT_SECRET,
-    expirations: {
+    expiration: {
       access: '1m',
       refresh: '5m',
       emailVerification: '60m',
@@ -33,6 +33,12 @@ export const properties = {
     retry: {
       attempts: 5,
       interval: 15 * 60 // 15 minutes
+    }
+  },
+  cookie: {
+    options: {
+      secure: process.env.NODE_ENV === 'productionx',
+      httpOnly: process.env.NODE_ENV === 'productionx'
     }
   },
   app: {

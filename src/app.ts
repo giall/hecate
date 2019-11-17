@@ -1,4 +1,5 @@
 import * as Koa from 'koa';
+import { Server } from 'http';
 
 import { configureRoutes, KoaController } from 'koa-joi-controllers';
 import { Database } from './database/database';
@@ -15,6 +16,7 @@ import { UserService } from './services/user.service';
 import { RootController } from './controllers/root.controller';
 
 export class App {
+  server: Server;
   database: Database;
   log: Logger;
 
@@ -23,24 +25,24 @@ export class App {
     this.log = new Logger();
   }
 
-  bootstrap(): (req, res) => void {
+  async bootstrap(): Promise<void> {
     this.log.info('Bootstrapping app...');
     const app = new Koa();
-    this.log.info('Environment: ', process.env.NODE_ENV);
-
+    await this.database.connect();
     this.configureMiddleware(app, [
       requestLogger(this.log), ctxLogger(this.log), errorHandler
     ]);
+    configureRoutes(app, this.controllers(), '/api');
 
-    this.database.connect().then(() => {
-      configureRoutes(app, this.controllers(), '/api');
-    });
-    return app.callback();
+    const port = process.env.PORT || 3000;
+    this.server = app.listen(port);
+    this.log.info(`Server running on port ${port}...`);
   }
 
   async terminate(): Promise<void> {
     this.log.info('Shutting down...');
     await this.database.disconnect();
+    this.server?.close();
   }
 
   private configureMiddleware(app: Koa, middleware: Middleware[]) {
