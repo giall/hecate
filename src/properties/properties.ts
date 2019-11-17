@@ -41,8 +41,8 @@ export const properties = {
   },
   cookie: {
     options: {
-      secure: process.env.NODE_ENV === 'productionx',
-      httpOnly: process.env.NODE_ENV === 'productionx'
+      secure: false && process.env.NODE_ENV === 'production',
+      httpOnly: process.env.NODE_ENV === 'production'
     }
   },
   app: {
@@ -50,7 +50,7 @@ export const properties = {
     email: process.env.APP_EMAIL
   },
   web: {
-    host: 'http://localhost:4200',
+    host: process.env.APP_URL || 'http://localhost:4200',
     endpoints: {
       emailVerification: 'verify',
       passwordReset: 'password-reset',

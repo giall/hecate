@@ -1,9 +1,9 @@
-import { Controller, Delete, KoaController, Post, Pre, Put, Validate } from 'koa-joi-controllers';
+import { Controller, KoaController, Post, Pre, Put, Validate } from 'koa-joi-controllers';
 import { Field, params } from '../utils/validation.utils';
 import { Context } from 'koa';
 import { UserDto } from '../models/user';
 import { Token, TokenUtils } from '../utils/token.utils';
-import { access } from '../middleware/middleware';
+import { access } from '../middleware/auth.middleware';
 import { UserService } from '../services/user.service';
 
 @Controller('/user')

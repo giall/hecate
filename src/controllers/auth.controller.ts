@@ -7,7 +7,7 @@ import { UserRepository } from '../repositories/user.repository';
 import { AuthService } from '../services/auth.service';
 import { Token, TokenUtils } from '../utils/token.utils';
 import { Errors } from '../error/errors';
-import { refresh } from '../middleware/middleware';
+import { refresh } from '../middleware/auth.middleware';
 import { properties } from '../properties/properties';
 
 @Controller('/auth')

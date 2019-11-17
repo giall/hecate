@@ -1,21 +1,24 @@
 import * as Koa from 'koa';
 import * as helmet from 'koa-helmet';
 
-import { Server } from 'http';
-import { configureRoutes, KoaController } from 'koa-joi-controllers';
-import { Database } from './database/database';
-import { UserRepository } from './repositories/user.repository';
-import { AuthService } from './services/auth.service';
-import { Logger } from './logger/logger';
-import { ctxLogger, errorHandler, requestLogger } from './middleware/middleware';
 import { Middleware } from 'koa';
-import { RateLimiter } from './rate.limiter/rate.limiter';
+import { Server } from 'http';
+import { Database } from './database/database';
+import { Logger } from './logger/logger';
+
+import { RootController } from './controllers/root.controller';
 import { AuthController } from './controllers/auth.controller';
 import { UserController } from './controllers/user.controller';
+import { AuthService } from './services/auth.service';
 import { UserService } from './services/user.service';
-import { RootController } from './controllers/root.controller';
-import { Transporter } from './transporter/transporter';
 import { MailService } from './services/mail.service';
+import { UserRepository } from './repositories/user.repository';
+import { RateLimiter } from './rate.limiter/rate.limiter';
+import { Transporter } from './transporter/transporter';
+
+import { configureRoutes, KoaController } from 'koa-joi-controllers';
+import { cors, errorHandler } from './middleware/middleware';
+import { ctxLog, requestLogger } from './middleware/logging.middleware';
 
 export class App {
   log: Logger;
@@ -35,7 +38,7 @@ export class App {
     const app = new Koa();
     await this.database.connect();
     this.configureMiddleware(app, [
-      requestLogger(this.log), ctxLogger(this.log), errorHandler, helmet()
+      requestLogger(), ctxLog, errorHandler, helmet(), cors()
     ]);
     configureRoutes(app, this.controllers(), '/api');
 
