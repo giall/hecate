@@ -5,7 +5,7 @@ import { Database } from '../../src/database/database';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { User } from '../../src/models/user';
 import { properties } from '../../src/properties/properties';
-import { TokenUtils } from '../../src/utils/token.utils';
+import { accessToken, emailVerification, magicLogin, passwordReset, refreshToken } from '../../src/utils/token.utils';
 import { chance } from '../utils/chance';
 import { v4 as uuid } from 'uuid';
 import { UserRepository } from '../../src/repositories/user.repository';
@@ -168,14 +168,14 @@ describe('/api/auth/refresh', () => {
   });
 
   test('Should fail if session is invalid', async () => {
-    cookie = `refresh=${TokenUtils.refresh(user, uuid())}`;
+    cookie = `refresh=${refreshToken(user, uuid())}`;
     const response = await request(app.server).post(endpoint).set('Cookie', cookie);
     expect(response.status).toEqual(403);
   });
 
   test('Should refresh session successfully', async () => {
     const [sessionId] = user.sessions;
-    cookie = `refresh=${TokenUtils.refresh(user, sessionId)}`;
+    cookie = `refresh=${refreshToken(user, sessionId)}`;
     const response = await request(app.server).post(endpoint).set('Cookie', cookie);
     expect(response.status).toEqual(200);
 
@@ -200,7 +200,7 @@ describe('/api/auth/logout', () => {
   test('Should logout successfully', async () => {
     const [sessionId] = user.sessions;
     expect(sessionId).toBeDefined();
-    const cookie = `refresh=${TokenUtils.refresh(user, sessionId)}`;
+    const cookie = `refresh=${refreshToken(user, sessionId)}`;
 
     const response = await request(app.server).post(endpoint).set('Cookie', cookie);
     expect(response.status).toEqual(204);
@@ -226,7 +226,7 @@ describe('/api/auth/invalidate', () => {
   test('Should remove all sessions', async () => {
     const [sessionId] = user.sessions;
     expect(sessionId).toBeDefined();
-    const cookie = `refresh=${TokenUtils.refresh(user, sessionId)}`;
+    const cookie = `refresh=${refreshToken(user, sessionId)}`;
 
     const response = await request(app.server).post(endpoint).set('Cookie', cookie);
     expect(response.status).toEqual(204);
@@ -250,7 +250,7 @@ describe('/api/auth/magic.login', () => {
   test('Should fail if token is not of magic login type', async () => {
     const response = await request(app.server).post(endpoint)
       .send({
-        token: TokenUtils.passwordReset(user)
+        token: passwordReset(user)
       });
     expect(response.status).toEqual(403);
   });
@@ -258,7 +258,7 @@ describe('/api/auth/magic.login', () => {
   test('Should fail if token user ID is not valid', async () => {
     const response = await request(app.server).post(endpoint)
       .send({
-        token: TokenUtils.magicLogin({
+        token: magicLogin({
           id: chance.string({length: 12})
         } as User)
       });
@@ -269,7 +269,7 @@ describe('/api/auth/magic.login', () => {
     await new UserRepository(database).allowMagicLogin(user.id);
     const response = await request(app.server).post(endpoint)
       .send({
-        token: TokenUtils.magicLogin(user)
+        token: magicLogin(user)
       });
     expect(response.status).toEqual(200);
   });
@@ -277,7 +277,7 @@ describe('/api/auth/magic.login', () => {
   test('Should fail if magic login is not allowed', async () => {
     const response = await request(app.server).post(endpoint)
       .send({
-        token: TokenUtils.magicLogin(user)
+        token: magicLogin(user)
       });
     expect(response.status).toEqual(410);
   });
@@ -312,7 +312,7 @@ describe('/api/user/password/reset', () => {
   test('Should fail if token hash does not match user hash', async () => {
     const response = await request(app.server).put(endpoint)
       .send({
-        token: TokenUtils.passwordReset({
+        token: passwordReset({
           id: user.id,
           hash: chance.string()
         } as User),
@@ -324,7 +324,7 @@ describe('/api/user/password/reset', () => {
   test('Should reset password', async () => {
     const response = await request(app.server).put(endpoint)
       .send({
-        token: TokenUtils.passwordReset(user),
+        token: passwordReset(user),
         newPassword: newPassword
       });
     expect(response.status).toEqual(204);
@@ -362,7 +362,7 @@ describe('/api/user/password/change', () => {
   let cookie: string;
 
   beforeAll(() => {
-    cookie = `access=${TokenUtils.access(user)}`;
+    cookie = `access=${accessToken(user)}`;
   });
 
   test('Should fail if there is no access token', async () => {
@@ -409,7 +409,7 @@ describe('/api/user/email/verification', () => {
 
   test('Should verify user', async () => {
     const response = await request(app.server).put(endpoint).send({
-      token: TokenUtils.emailVerification(user)
+      token: emailVerification(user)
     });
     expect(response.status).toEqual(204);
     const updatedUser = await getUser();
@@ -418,7 +418,7 @@ describe('/api/user/email/verification', () => {
 
   test('Should fail if user is already verified', async () => {
     const response = await request(app.server).put(endpoint).send({
-      token: TokenUtils.emailVerification(user)
+      token: emailVerification(user)
     });
     expect(response.status).toEqual(410);
   });
@@ -429,7 +429,7 @@ describe('/api/user/email/change', () => {
   let cookie;
 
   beforeAll(() => {
-    cookie = `access=${TokenUtils.access(user)}`;
+    cookie = `access=${accessToken(user)}`;
   });
 
   test('Should fail if there is no access token', async () => {
@@ -504,7 +504,7 @@ describe('/api/user/delete', () => {
   let cookie;
 
   beforeAll(() => {
-    cookie = `access=${TokenUtils.access(user)}`;
+    cookie = `access=${accessToken(user)}`;
   });
 
   test('Should fail if there is no access token', async () => {

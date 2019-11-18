@@ -5,7 +5,7 @@ import { LimiterKeys, RateLimiter } from '../rate.limiter/rate.limiter';
 import { User, UserDto } from '../models/user';
 import { UserRepository } from '../repositories/user.repository';
 import { AuthService } from '../services/auth.service';
-import { Token, TokenUtils } from '../utils/token.utils';
+import { accessToken, decode, refreshToken, Token } from '../utils/token.utils';
 import { refresh } from '../middleware/auth.middleware';
 import { properties } from '../properties/properties';
 import { clearAuthTokens, setRateLimitHeaders, validateSession } from '../utils/auth.utils';
@@ -76,7 +76,7 @@ export class AuthController extends KoaController {
   }))
   async magicLogin(ctx: Context) {
     const {token} = ctx.request.body;
-    const payload = TokenUtils.decode(token, Token.MagicLogin);
+    const payload = decode(token, Token.MagicLogin);
     const user = await this.authService.magicLogin(payload.id);
     ctx.log.info(`User with id=${user.id} logged in via magic login`);
     await this.userLogin(ctx, user);
@@ -112,12 +112,10 @@ export class AuthController extends KoaController {
   }
 
   private async setAuthTokens(ctx: Context, user: User, rememberMe = false) {
-    const accessToken = TokenUtils.access(user);
     const cookieOptions = properties.cookie.options;
-    ctx.cookies.set(Token.Access, accessToken, cookieOptions);
+    ctx.cookies.set(Token.Access, accessToken(user), cookieOptions);
 
     const session = await this.authService.addSession(user.id);
-    const refreshToken = TokenUtils.refresh(user, session, rememberMe);
-    ctx.cookies.set(Token.Refresh, refreshToken, cookieOptions);
+    ctx.cookies.set(Token.Refresh, refreshToken(user, session, rememberMe), cookieOptions);
   }
 }

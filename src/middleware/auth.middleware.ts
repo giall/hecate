@@ -1,11 +1,11 @@
 // requires an access token to be sent with request, and saves user ID in ctx.user
-import { Payload, Token, TokenUtils } from '../utils/token.utils';
+import { decode, Payload, Token } from '../utils/token.utils';
 import { Errors } from '../error/errors';
 
 async function access(ctx, next) {
   const token = ctx.cookies.get(Token.Access);
   if (token) {
-    const payload = TokenUtils.decode(token, Token.Access) as Payload;
+    const payload = decode(token, Token.Access) as Payload;
     ctx.user = payload.id;
     await next();
   } else {
@@ -19,7 +19,7 @@ async function access(ctx, next) {
 async function refresh(ctx, next) {
   const token = ctx.cookies.get(Token.Refresh);
   if (token) {
-    const payload = TokenUtils.decode(token, Token.Refresh) as Payload;
+    const payload = decode(token, Token.Refresh) as Payload;
     ctx.user = payload.id;
     ctx.session = payload.session;
     await next();

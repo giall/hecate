@@ -2,7 +2,7 @@ import { Controller, KoaController, Post, Pre, Put, Validate } from 'koa-joi-con
 import { Field, params } from '../utils/validation.utils';
 import { Context } from 'koa';
 import { UserDto } from '../models/user';
-import { Token, TokenUtils } from '../utils/token.utils';
+import { decode, Token } from '../utils/token.utils';
 import { access } from '../middleware/auth.middleware';
 import { UserService } from '../services/user.service';
 
@@ -35,7 +35,7 @@ export class UserController extends KoaController {
   async emailVerification(ctx: Context) {
     const {token} = ctx.request.body;
     ctx.log.debug(`email verification token: ${token}`);
-    const userId = TokenUtils.decode(token, Token.EmailVerification).id;
+    const userId = decode(token, Token.EmailVerification).id;
     ctx.log.info(`Verifying email for user with id=${userId}`);
     await this.userService.verifyEmail(userId);
     ctx.status = 204;
@@ -82,7 +82,7 @@ export class UserController extends KoaController {
   }))
   async resetPassword(ctx: Context) {
     const {token, newPassword} = ctx.request.body;
-    const payload = TokenUtils.decode(token, Token.PasswordReset);
+    const payload = decode(token, Token.PasswordReset);
     await this.userService.resetPassword(payload.id, payload.hash, newPassword);
     ctx.status = 204;
   }

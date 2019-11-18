@@ -1,8 +1,9 @@
 import { properties } from '../properties/properties';
+import { emailVerification, passwordReset, magicLogin } from '../utils/token.utils';
 import { User } from '../models/user';
-import { TokenUtils } from '../utils/token.utils';
 import { Address, Transporter } from '../transporter/transporter';
 import { Logger } from '../logger/logger';
+import { to } from '../utils/mail.utils';
 
 export class MailService {
   private log: Logger;
@@ -22,7 +23,7 @@ export class MailService {
   }
 
   async emailVerification(user: User): Promise<void> {
-    const token = TokenUtils.emailVerification(user);
+    const token = emailVerification(user);
     const emailVerificationUrl = `${properties.web.host}/${properties.web.endpoints.emailVerification}?token=${token}`;
     this.log.debug(`Email verification url: ${emailVerificationUrl}`);
     const subject = 'Please verify your email';
@@ -31,12 +32,12 @@ export class MailService {
         Please verify your email by <a href="${emailVerificationUrl}">following this link</a>.<br/><br/>
         Thank you,<br/>The ${(this.app)} Team`;
     return this.transporter.send({
-      from: this.from, to: this.to(user), subject, text, html
+      from: this.from, to: to(user), subject, text, html
     });
   }
 
   async passwordReset(user: User): Promise<void> {
-    const token = TokenUtils.passwordReset(user);
+    const token = passwordReset(user);
     const passwordResetUrl = `${properties.web.host}/${properties.web.endpoints.passwordReset}?token=${token}`;
     this.log.debug(`Password reset url: ${passwordResetUrl}`);
     const subject = 'Password reset';
@@ -48,12 +49,12 @@ export class MailService {
       If this wasn't you, you can ignore this email.<br/><br/>
       Thank you,<br/>The ${this.app} Team`;
     return this.transporter.send({
-      from: this.from, to: this.to(user), subject, text, html
+      from: this.from, to: to(user), subject, text, html
     });
   }
 
   async magicLogin(user: User): Promise<void> {
-    const token = TokenUtils.magicLogin(user);
+    const token = magicLogin(user);
     const magicLoginUrl = `${properties.web.host}/${properties.web.endpoints.magicLogin}?token=${token}`;
     this.log.debug(`Magic login url: ${magicLoginUrl}`);
     const subject = `Sign in to ${this.app}`;
@@ -65,14 +66,7 @@ export class MailService {
         The link can only be used once will expire in 5 minutes.<br/><br/>
         Thank you,<br/>The ${this.app} Team`;
     return this.transporter.send({
-      from: this.from, to: this.to(user), subject, text, html
+      from: this.from, to: to(user), subject, text, html
     });
-  }
-
-  private to(user: User): Address {
-    return {
-      email: user.email,
-      name: user.username
-    };
   }
 }

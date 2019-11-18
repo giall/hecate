@@ -1,8 +1,8 @@
 import { MailOptions, Transporter } from './transporter';
 import * as https from 'https';
-import { ClientRequestArgs } from 'http';
 import { properties } from '../properties/properties';
 import { Logger } from '../logger/logger';
+import { mailJetRequest } from '../utils/mail.utils';
 
 export class MailJetTransporter implements Transporter {
   log: Logger;
@@ -15,8 +15,7 @@ export class MailJetTransporter implements Transporter {
   }
 
   send(options: MailOptions): Promise<void> {
-    const data = this.data(options);
-    const args = this.args(data.length);
+    const { data, args } = mailJetRequest(this.auth, options);
     this.log.debug(`Sending request to MailJet API with data=${data} and args:`, args);
     const request = https.request(args, res => {
       this.log.info(`Sent request to MailJet API and received response with statusCode=${res.statusCode}`);
@@ -28,31 +27,5 @@ export class MailJetTransporter implements Transporter {
     request.write(data);
     request.end();
     return Promise.resolve();
-  }
-
-  private args(length: number): ClientRequestArgs {
-    return {
-      hostname: 'api.mailjet.com',
-      port: 443,
-      path: '/v3.1/send',
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': length,
-        'Authorization': `Basic ${this.auth}`
-      }
-    };
-  }
-
-  private data(options: MailOptions): string {
-    return JSON.stringify({
-      Messages: [{
-        From: {Email: options.from.email, Name: options.from.name},
-        To: [{Email: options.to.email, Name: options.to.name}],
-        Subject: options.subject,
-        TextPart: options.text,
-        HTMLPart: options.html
-      }]
-    });
   }
 }
