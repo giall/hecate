@@ -19,33 +19,39 @@ export enum Token {
   MagicLogin = 'magicLogin'
 }
 
+interface Data {
+  id: string;
+  session?: string;
+  hash?: string;
+}
+
 export class TokenUtils {
 
   private static secret = properties.jwt.secret;
 
   static access(user: User) {
-    const { id } = user;
-    return this.token({ id }, Token.Access);
+    const {id} = user;
+    return this.token({id}, Token.Access);
   }
 
-  static refresh(user: User, session: string) {
-    const { id } = user;
-    return this.token({ id, session }, Token.Refresh);
+  static refresh(user: User, session: string, extended = false) {
+    const {id} = user;
+    return this.token({id, session}, Token.Refresh, extended);
   }
 
   static emailVerification(user: User) {
-    const { id } = user;
-    return this.token({ id }, Token.EmailVerification);
+    const {id} = user;
+    return this.token({id}, Token.EmailVerification);
   }
 
   static passwordReset(user: User) {
-    const { id, hash } = user;
-    return this.token({ id, hash }, Token.PasswordReset);
+    const {id, hash} = user;
+    return this.token({id, hash}, Token.PasswordReset);
   }
 
   static magicLogin(user: User) {
-    const { id } = user;
-    return this.token({ id }, Token.MagicLogin);
+    const {id} = user;
+    return this.token({id}, Token.MagicLogin);
   }
 
   static decode(token: string, type: Token) {
@@ -63,13 +69,15 @@ export class TokenUtils {
     return payload;
   }
 
-  private static token(data: {id: string; session?: string; hash?: string}, type: Token): string {
+  private static token(data: Data, type: Token, extended = false): string {
+    const key = extended ? 'extendedRefresh' : type;
     const options = {
-      expiresIn: properties.jwt.expiration[type]
+      expiresIn: properties.jwt.expiration[key]
     };
     const payload: Payload = {
       ...data, type
     };
+    log.info(`Signing ${type} token that expiresIn=${options.expiresIn}`);
     return sign(payload, this.secret, options);
   }
 }

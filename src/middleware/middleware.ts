@@ -25,7 +25,7 @@ async function errorHandler(ctx, next) {
 function cors() {
   return koaCors({
     origin: properties.web.host,
-    allowHeaders: 'Content-Type',
+    allowHeaders: 'content-type',
     credentials: true
   });
 }

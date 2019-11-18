@@ -6,9 +6,9 @@ import { User, UserDto } from '../models/user';
 import { UserRepository } from '../repositories/user.repository';
 import { AuthService } from '../services/auth.service';
 import { Token, TokenUtils } from '../utils/token.utils';
-import { Errors } from '../error/errors';
 import { refresh } from '../middleware/auth.middleware';
 import { properties } from '../properties/properties';
+import { clearAuthTokens, setRateLimitHeaders, validateSession } from '../utils/auth.utils';
 
 @Controller('/auth')
 export class AuthController extends KoaController {
@@ -27,10 +27,11 @@ export class AuthController extends KoaController {
   @Post('/login')
   @Validate(params({
     email: Field.Email,
-    password: Field.Password
+    password: Field.Password,
+    rememberMe: Field.RememberMe
   }))
   async login(ctx: Context) {
-    const {email, password} = ctx.request.body;
+    const {email, password, rememberMe} = ctx.request.body;
     const keys: LimiterKeys = {email, ip: ctx.ip};
     const res = await this.rateLimiter.limit(keys);
     if (res.ok) {
@@ -38,14 +39,14 @@ export class AuthController extends KoaController {
       if (user) {
         await this.rateLimiter.reset(keys);
         ctx.log.info(`User with id=${user.id} successfully logged in`);
-        await this.userLogin(ctx, user);
+        await this.userLogin(ctx, user, rememberMe);
       } else {
-        this.setRateLimitHeaders(ctx, res);
+        setRateLimitHeaders(ctx, res);
         ctx.status = 401;
         ctx.body = 'Invalid credentials.';
       }
     } else {
-      this.setRateLimitHeaders(ctx, res);
+      setRateLimitHeaders(ctx, res);
       ctx.status = 429;
       ctx.body = 'Too many attempts. Please try again later.';
     }
@@ -55,7 +56,7 @@ export class AuthController extends KoaController {
   @Pre(refresh)
   async logout(ctx: Context) {
     await this.authService.removeSession(ctx.user, ctx.session);
-    this.clearAuthTokens(ctx);
+    clearAuthTokens(ctx);
     ctx.status = 204;
   }
 
@@ -86,7 +87,7 @@ export class AuthController extends KoaController {
   async refresh(ctx: Context) {
     const user = await this.userRepository.findById(ctx.user);
     ctx.log.info(`Refreshing tokens for user with id=${user.id}`);
-    this.validateSession(ctx.session, user.sessions);
+    validateSession(ctx.session, user.sessions);
     await this.authService.removeSession(user.id, ctx.session);
     ctx.log.info(`User with id=${user.id} successfully refreshed tokens`);
     await this.userLogin(ctx, user);
@@ -97,42 +98,26 @@ export class AuthController extends KoaController {
   async invalidate(ctx: Context) {
     const user = await this.userRepository.findById(ctx.user);
     ctx.log.info(`Invalidating refresh tokens for user with id=${user.id}`);
-    this.validateSession(ctx.session, user.sessions);
+    validateSession(ctx.session, user.sessions);
     await this.authService.resetSessions(user.id);
-    this.clearAuthTokens(ctx);
+    clearAuthTokens(ctx);
     ctx.log.info('Tokens successfully invalidated');
     ctx.status = 204;
   }
 
-  private async userLogin(ctx, user) {
-    await this.setAuthTokens(ctx, user);
+  private async userLogin(ctx, user, rememberMe = false) {
+    await this.setAuthTokens(ctx, user, rememberMe);
     ctx.status = 200;
     ctx.body = UserDto.from(user);
   }
 
-  private async setAuthTokens(ctx: Context, user: User) {
+  private async setAuthTokens(ctx: Context, user: User, rememberMe = false) {
     const accessToken = TokenUtils.access(user);
-    ctx.cookies.set(Token.Access, accessToken, properties.cookie.options);
+    const cookieOptions = properties.cookie.options;
+    ctx.cookies.set(Token.Access, accessToken, cookieOptions);
 
     const session = await this.authService.addSession(user.id);
-    const refreshToken = TokenUtils.refresh(user, session);
-    ctx.cookies.set(Token.Refresh, refreshToken, properties.cookie.options);
-  }
-
-  private clearAuthTokens(ctx: Context) {
-    ctx.cookies.set(Token.Access, undefined);
-    ctx.cookies.set(Token.Refresh, undefined);
-  }
-
-  private validateSession(session, sessions) {
-    if (!sessions.includes(session)) {
-      throw Errors.forbidden('Invalid token.');
-    }
-  }
-
-  private setRateLimitHeaders(ctx, res) {
-    ctx.set('X-RateLimit-Limit', res.limit);
-    ctx.set('X-RateLimit-Remaining', res.remaining);
-    ctx.set('X-RateLimit-Reset', res.reset);
+    const refreshToken = TokenUtils.refresh(user, session, rememberMe);
+    ctx.cookies.set(Token.Refresh, refreshToken, cookieOptions);
   }
 }

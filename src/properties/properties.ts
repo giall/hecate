@@ -9,8 +9,9 @@ export const properties = {
   jwt: {
     secret: process.env.JWT_SECRET,
     expiration: {
-      access: '1m',
-      refresh: '5m',
+      access: '15m',
+      refresh: '1h',
+      extendedRefresh: '1w',
       emailVerification: '60m',
       passwordReset: '60m',
       magicLogin: '5m'
@@ -42,7 +43,8 @@ export const properties = {
   cookie: {
     options: {
       secure: false && process.env.NODE_ENV === 'production',
-      httpOnly: process.env.NODE_ENV === 'production'
+      httpOnly: false && process.env.NODE_ENV === 'production',
+      sameSite: 'none' as 'strict' | 'lax' | 'none' | boolean
     }
   },
   app: {

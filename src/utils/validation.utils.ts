@@ -5,7 +5,8 @@ export enum Field {
   Username = 'username',
   Password = 'password',
   Email = 'email',
-  Token = 'token'
+  Token = 'token',
+  RememberMe = 'rememberMe'
 }
 
 const validators = {
@@ -21,7 +22,8 @@ const validators = {
     .max(100)
     .required(),
   [Field.Token]: Validator.Joi.string()
-    .required()
+    .required(),
+  [Field.RememberMe]: Validator.Joi.boolean()
 };
 
 export function params(params: { [key: string]: Field }): ValidationOptions {
