@@ -1,11 +1,12 @@
 import * as request from 'supertest';
 import * as http from 'http';
+import { chance } from '../utils/chance';
 
 import { properties } from '../../src/properties/properties';
 properties.logging.level = 'test';
 properties.options.emailVerificationRequired = true;
+properties.jwt.secret = chance.string();
 
-import { chance } from '../utils/chance';
 import { v4 as uuid } from 'uuid';
 import { accessToken, emailVerification, magicLogin, passwordReset, refreshToken } from '../../src/utils/token.utils';
 import { App } from '../../src/app';
