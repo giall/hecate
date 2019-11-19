@@ -1,4 +1,4 @@
-name: hecate
+name: build
 on: [push]
 jobs:
   build:
