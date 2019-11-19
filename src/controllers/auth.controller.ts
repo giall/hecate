@@ -10,7 +10,6 @@ import { refresh } from '../middleware/auth.middleware';
 import { properties } from '../properties/properties';
 import { clearAuthTokens, setRateLimitHeaders, validateSession } from '../utils/auth.utils';
 import { Errors } from '../error/errors';
-import { seconds } from '../utils/time.utils';
 
 @Controller('/auth')
 export class AuthController extends KoaController {
@@ -112,16 +111,16 @@ export class AuthController extends KoaController {
 
   private async setAuthTokens(ctx: Context, user: User, rememberMe = false) {
     const cookieOptions = properties.cookie.options;
-    const expiration = properties.jwt.expiration;
+    // const expiration = properties.jwt.expiration;
     ctx.cookies.set(Token.Access, accessToken(user), {
       ...cookieOptions,
-      maxAge: seconds(expiration.access)
+      // maxAge: seconds(expiration.access)
     });
 
     const session = await this.authService.addSession(user.id);
     ctx.cookies.set(Token.Refresh, refreshToken(user, session, rememberMe), {
       ...cookieOptions,
-      maxAge: rememberMe ? seconds(expiration.refresh) : seconds(expiration.extendedRefresh)
+      // maxAge: rememberMe ? seconds(expiration.refresh) : seconds(expiration.extendedRefresh)
     });
   }
 }
