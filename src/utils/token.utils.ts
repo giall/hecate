@@ -4,11 +4,8 @@ import { User } from '../models/user';
 import { properties } from '../properties/properties';
 import { log } from '../logger/logger';
 
-export interface Payload {
+export interface Payload extends Data{
   type: Token;
-  id: string;
-  session?: string; // used by refresh token
-  hash?: string; // used by password reset token
 }
 
 export enum Token {
@@ -21,8 +18,9 @@ export enum Token {
 
 interface Data {
   id: string;
-  session?: string;
-  hash?: string;
+  session?: string; // used by refresh token
+  email?: string; // used by email validation token
+  hash?: string; // used by password reset token
 }
 
 const secret = properties.jwt.secret;
@@ -50,8 +48,8 @@ function refreshToken(user: User, session: string, extended = false) {
 }
 
 function emailVerification(user: User) {
-  const {id} = user;
-  return token({id}, Token.EmailVerification);
+  const {id, email} = user;
+  return token({id, email}, Token.EmailVerification);
 }
 
 function passwordReset(user: User) {

@@ -30,8 +30,12 @@ export class UserService {
     return user;
   }
 
-  async verifyEmail(userId: string) {
+  async verifyEmail(userId: string, email: string) {
     const user = await this.userRepository.findById(userId);
+    if (user.email !== email) {
+      this.log.warn(`Email in token does not match current email for user with id=${userId}`);
+      throw Errors.badRequest('Invalid token.');
+    }
     if (user.verified) {
       this.log.warn(`User with id=${userId} has already verified their email`);
       throw Errors.gone('Invalid token.');

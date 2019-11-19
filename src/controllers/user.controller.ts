@@ -35,9 +35,9 @@ export class UserController extends KoaController {
   async emailVerification(ctx: Context) {
     const {token} = ctx.request.body;
     ctx.log.debug(`email verification token: ${token}`);
-    const userId = decode(token, Token.EmailVerification).id;
-    ctx.log.info(`Verifying email for user with id=${userId}`);
-    await this.userService.verifyEmail(userId);
+    const { id, email } = decode(token, Token.EmailVerification);
+    ctx.log.info(`Verifying email for user with id=${id}`);
+    await this.userService.verifyEmail(id, email);
     ctx.status = 204;
   }
 

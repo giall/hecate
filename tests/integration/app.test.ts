@@ -19,7 +19,7 @@ let transporter: DummyTransporter;
 let user: User;
 const userDetails = {
   username: chance.username(),
-  email: chance.email(),
+  email: chance.emailAddress(),
   password: chance.password()
 };
 
@@ -81,7 +81,7 @@ describe('/api/ping', () => {
 describe('/api/user/register', () => {
   const endpoint = '/api/user/register';
   const username = chance.username();
-  const email = chance.email();
+  const email = chance.emailAddress();
 
   test('Should register user successfully', async () => {
     const response = await request(app.server)
@@ -289,7 +289,7 @@ describe('/api/auth/magic.login/request', () => {
   test('Should not send email if user does not exist', async () => {
     const response = await request(app.server).post(endpoint)
       .send({
-        email: chance.email()
+        email: chance.emailAddress()
       });
     expect(response.status).toEqual(202);
     transporter.assertNoEmailSent();
@@ -340,7 +340,7 @@ describe('/api/user/password/reset/request', () => {
   test('Should not send email if user does not exist', async () => {
     const response = await request(app.server).post(endpoint)
       .send({
-        email: chance.email()
+        email: chance.emailAddress()
       });
     expect(response.status).toEqual(202);
     transporter.assertNoEmailSent();
@@ -414,6 +414,15 @@ describe('/api/user/email/verification', () => {
     expect(response.status).toEqual(204);
     const updatedUser = await getUser();
     expect(updatedUser.verified).toBeTruthy();
+  });
+
+  test('Should fail if user email does not match token email', async () => {
+    const tempUser = {...user} as User;
+    tempUser.email = chance.emailAddress();
+    const response = await request(app.server).put(endpoint).send({
+      token: emailVerification(tempUser)
+    });
+    expect(response.status).toEqual(400);
   });
 
   test('Should fail if user is already verified', async () => {
