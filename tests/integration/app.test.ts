@@ -69,9 +69,9 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  server.close();
   await database.disconnect();
   await mongod.stop();
-  server.close();
 });
 
 describe('/api/ping', () => {

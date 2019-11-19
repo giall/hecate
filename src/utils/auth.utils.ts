@@ -4,8 +4,8 @@ import { Errors } from '../error/errors';
 import { compareSync, hashSync } from 'bcrypt';
 
 function clearAuthTokens(ctx: Context) {
-  ctx.cookies.set(Token.Access, undefined);
-  ctx.cookies.set(Token.Refresh, undefined);
+  ctx.cookies.set(Token.Access);
+  ctx.cookies.set(Token.Refresh);
 }
 
 function setRateLimitHeaders(ctx, res) {
