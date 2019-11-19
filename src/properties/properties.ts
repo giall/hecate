@@ -11,7 +11,7 @@ export const properties = {
     expiration: {
       access: '15m',
       refresh: '1h',
-      extendedRefresh: '1w',
+      extendedRefresh: '7d',
       emailVerification: '60m',
       passwordReset: '60m',
       magicLogin: '5m'
