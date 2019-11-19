@@ -16,20 +16,31 @@ interface LimiterRes {
 }
 
 export class RateLimiter {
-  private limiter: RateLimiterMongo;
   private log: Logger;
+  private database: Database;
+  private limiter: RateLimiterMongo;
 
   constructor(database: Database) {
-    this.limiter = new RateLimiterMongo({
-      storeClient: database.client,
-      dbName: database.name,
-      points: properties.limiter.retry.attempts,
-      duration: properties.limiter.retry.interval
-    });
+    this.database = database;
     this.log = new Logger();
   }
 
+  async init() {
+    if (!this.database.isConnected()) {
+      await this.database.connect();
+    }
+    this.limiter = new RateLimiterMongo({
+      storeClient: this.database.client,
+      dbName: this.database.name,
+      points: properties.limiter.retry.attempts,
+      duration: properties.limiter.retry.interval
+    });
+  }
+
   async limit(keys: LimiterKeys): Promise<LimiterRes> {
+    if (!this.limiter) {
+      await this.init();
+    }
     let ok = false;
     let result: RateLimiterRes;
     try {

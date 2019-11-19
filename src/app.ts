@@ -2,7 +2,6 @@ import * as Koa from 'koa';
 import * as helmet from 'koa-helmet';
 
 import { Middleware } from 'koa';
-import { Server } from 'http';
 import { Database } from './database/database';
 import { Logger } from './logger/logger';
 
@@ -23,7 +22,6 @@ import { ctxLog, requestLogger } from './middleware/logging.middleware';
 export class App {
   log: Logger;
 
-  server: Server;
   database: Database;
   mail: MailService;
 
@@ -33,24 +31,15 @@ export class App {
     this.mail = new MailService(transporter);
   }
 
-  async bootstrap(): Promise<void> {
+  bootstrap(): Koa {
     this.log.info('Bootstrapping app...');
     const app = new Koa();
-    await this.database.connect();
     this.configureMiddleware(app, [
       requestLogger(), ctxLog, errorHandler, helmet(), cors()
     ]);
     configureRoutes(app, this.controllers(), '/api');
-
-    const port = process.env.PORT || 3000;
-    this.server = app.listen(port);
-    this.log.info(`Server running on port ${port}...`);
-  }
-
-  async terminate(): Promise<void> {
-    this.log.info('Shutting down...');
-    await this.database.disconnect();
-    this.server?.close();
+    this.log.info('Controllers and middleware configured.');
+    return app;
   }
 
   private configureMiddleware(app: Koa, middleware: Middleware[]) {
