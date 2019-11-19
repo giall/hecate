@@ -20,7 +20,7 @@ export class UserService {
   }
 
   async register(credentials: Credentials): Promise<User> {
-    const { username, email } = credentials;
+    const {username, email} = credentials;
     this.log.info(`Registering user: ${username} with email: ${email}`);
     await this.checkForConflicts(credentials);
 
@@ -51,7 +51,7 @@ export class UserService {
     this.verifyPassword(user, password);
     await this.userRepository.update(userId, {email, verified: false});
     this.log.info(`Changed email for userId=${userId}`);
-    this.sendVerificationEmail(user);
+    this.sendVerificationEmail({...user, email} as User);
   }
 
   async resetPassword(userId: string, hash: string, newPassword: string) {
@@ -92,7 +92,7 @@ export class UserService {
   }
 
   private async checkForConflicts(credentials: Credentials) {
-    const { username, email } = credentials;
+    const {username, email} = credentials;
     let user = await this.userRepository.find({username});
     if (user) {
       this.log.info(`User with username: ${username} already exists`);
