@@ -16,7 +16,7 @@ import { RateLimiter } from './rate.limiter/rate.limiter';
 import { Transporter } from './transporter/transporter';
 
 import { configureRoutes, KoaController } from 'koa-joi-controllers';
-import { cors, errorHandler } from './middleware/middleware';
+import { cors, errorHandler, send } from './middleware/middleware';
 import { ctxLog, requestLogger } from './middleware/logging.middleware';
 
 export class App {
@@ -35,7 +35,7 @@ export class App {
     this.log.info('Bootstrapping app...');
     const app = new Koa();
     this.configureMiddleware(app, [
-      requestLogger(), ctxLog, errorHandler, helmet(), cors()
+      requestLogger(), ctxLog, send, errorHandler, helmet(), cors()
     ]);
     configureRoutes(app, this.controllers(), '/api');
     this.log.info('Controllers and middleware configured.');

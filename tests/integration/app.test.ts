@@ -206,7 +206,7 @@ describe('/api/auth/logout', () => {
     const cookie = `refresh=${refreshToken(user, sessionId)}`;
 
     const response = await request(server).post(endpoint).set('Cookie', cookie);
-    expect(response.status).toEqual(204);
+    expect(response.status).toEqual(200);
 
     const updatedUser = await getUser();
     expect(updatedUser.sessions.includes(sessionId)).toBeFalsy();
@@ -232,7 +232,7 @@ describe('/api/auth/invalidate', () => {
     const cookie = `refresh=${refreshToken(user, sessionId)}`;
 
     const response = await request(server).post(endpoint).set('Cookie', cookie);
-    expect(response.status).toEqual(204);
+    expect(response.status).toEqual(200);
 
     const updatedUser = await getUser();
     expect(updatedUser.sessions.length).toEqual(0);
@@ -330,7 +330,7 @@ describe('/api/user/password/reset', () => {
         token: passwordReset(user),
         newPassword: newPassword
       });
-    expect(response.status).toEqual(204);
+    expect(response.status).toEqual(200);
 
     userDetails.password = newPassword;
     await login();
@@ -400,7 +400,7 @@ describe('/api/user/password/change', () => {
         oldPassword: userDetails.password,
         newPassword: newPassword
       });
-    expect(response.status).toEqual(204);
+    expect(response.status).toEqual(200);
 
     userDetails.password = newPassword;
     await login();
@@ -414,7 +414,7 @@ describe('/api/user/email/verification', () => {
     const response = await request(server).put(endpoint).send({
       token: emailVerification(user)
     });
-    expect(response.status).toEqual(204);
+    expect(response.status).toEqual(200);
     const updatedUser = await getUser();
     expect(updatedUser.verified).toBeTruthy();
   });
@@ -477,7 +477,7 @@ describe('/api/user/email/change', () => {
         email: newEmail,
         password: userDetails.password
       });
-    expect(response.status).toEqual(204);
+    expect(response.status).toEqual(200);
     const updatedUser = await getUser();
     expect(updatedUser.email).toEqual(newEmail);
     userDetails.email = newEmail;
@@ -539,7 +539,7 @@ describe('/api/user/delete', () => {
       .send({
         password: userDetails.password
       });
-    expect(response.status).toEqual(204);
+    expect(response.status).toEqual(200);
     const updatedUser = await getUser();
     expect(updatedUser.email).toBeUndefined();
   });

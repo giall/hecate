@@ -30,6 +30,14 @@ function cors() {
   });
 }
 
+async function send(ctx, next) {
+  ctx.send = function send(status: number, value: string | object) {
+    ctx.status = status;
+    ctx.body = typeof value === 'string' ? {message: value} : value;
+  };
+  await next();
+}
+
 export {
-  errorHandler, cors
+  errorHandler, cors, send
 };

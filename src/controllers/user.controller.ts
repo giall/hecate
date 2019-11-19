@@ -24,8 +24,7 @@ export class UserController extends KoaController {
   async register(ctx: Context) {
     const {username, email, password} = ctx.request.body;
     const user = await this.userService.register({username, email, password});
-    ctx.status = 201;
-    ctx.body = UserDto.from(user);
+    ctx.send(201, {message: 'Registered successfully.', user: UserDto.from(user)});
   }
 
   @Put('/email/verification')
@@ -38,7 +37,7 @@ export class UserController extends KoaController {
     const { id, email } = decode(token, Token.EmailVerification);
     ctx.log.info(`Verifying email for user with id=${id}`);
     await this.userService.verifyEmail(id, email);
-    ctx.status = 204;
+    ctx.send(200, 'Your email has been verified.');
   }
 
   @Put('/email/change')
@@ -50,7 +49,7 @@ export class UserController extends KoaController {
   async changeEmail(ctx: Context) {
     const {email, password} = ctx.request.body;
     await this.userService.changeEmail(ctx.user, email, password);
-    ctx.status = 204;
+    ctx.send(200, 'Email changed.');
   }
 
   @Put('/password/change')
@@ -62,7 +61,7 @@ export class UserController extends KoaController {
   async changePassword(ctx: Context) {
     const {oldPassword, newPassword} = ctx.request.body;
     await this.userService.changePassword(ctx.user, oldPassword, newPassword);
-    ctx.status = 204;
+    ctx.send(200, 'Password changed.');
   }
 
   @Post('/password/reset/request')
@@ -72,7 +71,7 @@ export class UserController extends KoaController {
   async resetPasswordRequest(ctx: Context) {
     const {email} = ctx.request.body;
     await this.userService.resetPasswordRequest(email);
-    ctx.status = 202;
+    ctx.send(202, 'Password reset email was sent.');
   }
 
   @Put('/password/reset')
@@ -84,7 +83,7 @@ export class UserController extends KoaController {
     const {token, newPassword} = ctx.request.body;
     const payload = decode(token, Token.PasswordReset);
     await this.userService.resetPassword(payload.id, payload.hash, newPassword);
-    ctx.status = 204;
+    ctx.send(200, 'Password was changed.');
   }
 
   @Put('/delete')
@@ -97,6 +96,6 @@ export class UserController extends KoaController {
     await this.userService.deleteUser(ctx.user, password);
     ctx.cookies.set(Token.Access, undefined);
     ctx.cookies.set(Token.Refresh, undefined);
-    ctx.status = 204;
+    ctx.send(200, 'Account deleted.');
   }
 }

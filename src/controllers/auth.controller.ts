@@ -9,6 +9,7 @@ import { accessToken, decode, refreshToken, Token } from '../utils/token.utils';
 import { refresh } from '../middleware/auth.middleware';
 import { properties } from '../properties/properties';
 import { clearAuthTokens, setRateLimitHeaders, validateSession } from '../utils/auth.utils';
+import { Errors } from '../error/errors';
 
 @Controller('/auth')
 export class AuthController extends KoaController {
@@ -42,13 +43,11 @@ export class AuthController extends KoaController {
         await this.userLogin(ctx, user, rememberMe);
       } else {
         setRateLimitHeaders(ctx, res);
-        ctx.status = 401;
-        ctx.body = 'Invalid credentials.';
+        throw Errors.unauthorized('Invalid credentials.');
       }
     } else {
       setRateLimitHeaders(ctx, res);
-      ctx.status = 429;
-      ctx.body = 'Too many attempts. Please try again later.';
+      throw Errors.tooManyRequests('Too many attempts. Please try again later.');
     }
   }
 
@@ -57,7 +56,7 @@ export class AuthController extends KoaController {
   async logout(ctx: Context) {
     await this.authService.removeSession(ctx.user, ctx.session);
     clearAuthTokens(ctx);
-    ctx.status = 204;
+    ctx.send(200, {message: 'Successfully logged out.'});
   }
 
   @Post('/magic.login/request')
@@ -67,7 +66,7 @@ export class AuthController extends KoaController {
   async magicLoginRequest(ctx: Context) {
     const {email} = ctx.request.body;
     await this.authService.requestMagicLogin(email);
-    ctx.status = 202;
+    ctx.send(202, 'One time login email was sent.');
   }
 
   @Post('/magic.login')
@@ -102,13 +101,12 @@ export class AuthController extends KoaController {
     await this.authService.resetSessions(user.id);
     clearAuthTokens(ctx);
     ctx.log.info('Tokens successfully invalidated');
-    ctx.status = 204;
+    ctx.send(200, 'You have been logged out of all devices.');
   }
 
   private async userLogin(ctx, user, rememberMe = false) {
     await this.setAuthTokens(ctx, user, rememberMe);
-    ctx.status = 200;
-    ctx.body = UserDto.from(user);
+    ctx.send(200, {message: 'Successfully logged in.', user: UserDto.from(user)});
   }
 
   private async setAuthTokens(ctx: Context, user: User, rememberMe = false) {
