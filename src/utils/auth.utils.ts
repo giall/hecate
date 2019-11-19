@@ -1,6 +1,7 @@
 import { Context } from 'koa';
 import { Token } from './token.utils';
 import { Errors } from '../error/errors';
+import { compareSync, hashSync } from 'bcrypt';
 
 function clearAuthTokens(ctx: Context) {
   ctx.cookies.set(Token.Access, undefined);
@@ -19,4 +20,12 @@ function validateSession(session, sessions) {
   }
 }
 
-export { clearAuthTokens, setRateLimitHeaders, validateSession }
+function hashPassword(password: string) {
+  return hashSync(password, 10);
+}
+
+function comparePassword(password: string, hash: string) {
+  return compareSync(password, hash);
+}
+
+export { clearAuthTokens, setRateLimitHeaders, validateSession, hashPassword, comparePassword }

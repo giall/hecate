@@ -29,4 +29,4 @@ async function refresh(ctx, next) {
   }
 }
 
-export { access, refresh };
+export { access, refresh }

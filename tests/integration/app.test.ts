@@ -269,7 +269,7 @@ describe('/api/auth/magic.login', () => {
   });
 
   test('Should login successfully', async () => {
-    await new UserRepository(database).allowMagicLogin(user.id);
+    await new UserRepository(database).update(user.id, {allowMagicLogin: true});
     const response = await request(server).post(endpoint)
       .send({
         token: magicLogin(user)

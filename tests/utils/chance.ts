@@ -5,4 +5,4 @@ chance.username = () => chance.string({alpha: true, length: 10});
 chance.password = () => chance.string({length: 10});
 chance.emailAddress = () => chance.email({domain: 'hecate.com'});
 
-export { chance };
+export { chance }

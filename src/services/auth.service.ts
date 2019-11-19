@@ -36,7 +36,7 @@ export class AuthService {
     const user = await this.userRepository.find({email});
     if (user) {
       this.log.info(`Sending magic login email to userId=${user.id}`);
-      await this.userRepository.allowMagicLogin(user.id);
+      await this.userRepository.update(user.id, {allowMagicLogin: true});
       await this.mailService.magicLogin(user);
     } else {
       this.log.warn(`User with email=${email} does not exist, unable to send magic login link.`);
@@ -49,7 +49,7 @@ export class AuthService {
       this.log.warn(`Magic login token for userId=${userId} has already been used`);
       throw Errors.gone('Invalid token.');
     }
-    await this.userRepository.useMagicLogin(userId);
+    await this.userRepository.update(userId, {allowMagicLogin: false});
     return user;
   }
 

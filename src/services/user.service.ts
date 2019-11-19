@@ -2,9 +2,9 @@ import { UserRepository } from '../repositories/user.repository';
 import { Logger } from '../logger/logger';
 import { Credentials, User } from '../models/user';
 import { Errors } from '../error/errors';
-import { compareSync } from 'bcrypt';
 import { properties } from '../properties/properties';
 import { MailService } from './mail.service';
+import { comparePassword, hashPassword } from '../utils/auth.utils';
 
 export class UserService {
   private log: Logger;
@@ -40,7 +40,7 @@ export class UserService {
       this.log.warn(`User with id=${userId} has already verified their email`);
       throw Errors.gone('Invalid token.');
     }
-    await this.userRepository.verifyEmail(userId);
+    await this.userRepository.update(userId, {verified: true});
   }
 
   async changeEmail(userId: string, email: string, password: string) {
@@ -49,7 +49,7 @@ export class UserService {
       throw Errors.badRequest('Old and new email addresses cannot be the same.');
     }
     this.verifyPassword(user, password);
-    await this.userRepository.changeEmail(userId, email);
+    await this.userRepository.update(userId, {email, verified: false});
     this.log.info(`Changed email for userId=${userId}`);
     this.sendVerificationEmail(user);
   }
@@ -60,7 +60,7 @@ export class UserService {
       this.log.warn(`Current hash for user with id=${userId} does not match with the one in the token`);
       throw Errors.gone('Invalid token.');
     }
-    await this.userRepository.changePassword(userId, newPassword);
+    await this.userRepository.update(userId, {hash: hashPassword(newPassword)});
     this.log.info(`Reset password for userId=${userId}`);
   }
 
@@ -80,7 +80,7 @@ export class UserService {
     }
     const user = await this.userRepository.findById(userId);
     this.verifyPassword(user, oldPassword);
-    await this.userRepository.changePassword(userId, newPassword);
+    await this.userRepository.update(userId, {hash: hashPassword(newPassword)});
     this.log.info(`Changed password for userId=${userId}`);
   }
 
@@ -113,7 +113,7 @@ export class UserService {
   }
 
   private verifyPassword(user: User, password: string) {
-    const success = compareSync(password, user.hash);
+    const success = comparePassword(password, user.hash);
     if (!success) {
       this.log.warn(`Invalid password for userId=${user.id}`);
       throw Errors.unauthorized('Invalid credentials.');

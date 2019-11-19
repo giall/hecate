@@ -1,9 +1,8 @@
 import { Database } from '../database/database';
-import { Collection, ObjectId } from 'mongodb';
 import { User } from '../models/user';
-import { hash } from 'bcrypt';
 import { Errors } from '../error/errors';
 import { Logger } from '../logger/logger';
+import { filter } from '../utils/db.utils';
 
 export class UserRepository {
 
@@ -21,7 +20,7 @@ export class UserRepository {
 
   async findById(id: string): Promise<User> {
     const collection = await this.collection();
-    const entity = await collection.findOne(this.getFilter(id));
+    const entity = await collection.findOne(filter(id));
     if (!entity) {
       this.log.warn(`user with id=${id} does not exist`);
       throw Errors.badRequest('Invalid user.');
@@ -41,54 +40,22 @@ export class UserRepository {
     return result.ops[0] as User;
   }
 
+  async update(id: string, options: {}) {
+    const collection = await this.collection();
+    return collection.updateOne(filter(id), {
+      $set: options
+    });
+  }
+
   async remove(id: string) {
     const collection = await this.collection();
-    return collection.deleteOne(this.getFilter(id));
-  }
-
-  async changePassword(id: string, password: string) {
-    const collection = await this.collection();
-    return collection.updateOne(this.getFilter(id), {
-      $set: {hash: await hash(password, 10)}
-    });
-  }
-
-  async changeEmail(id: string, email: string) {
-    const collection = await this.collection();
-    return collection.updateOne(this.getFilter(id), {
-      $set: {email, verified: false}
-    });
-  }
-
-  async verifyEmail(id: string) {
-    const collection = await this.collection();
-    return collection.updateOne(this.getFilter(id), {
-      $set: {verified: true}
-    });
+    return collection.deleteOne(filter(id));
   }
 
   async updateSessions(id: string, sessions: string[]) {
     const collection = await this.collection();
-    return collection.updateOne(this.getFilter(id), {
+    return collection.updateOne(filter(id), {
       $set: {sessions}
     });
-  }
-
-  async allowMagicLogin(id: string) {
-    const collection = await this.collection();
-    return collection.updateOne(this.getFilter(id), {
-      $set: {allowMagicLogin: true}
-    });
-  }
-
-  async useMagicLogin(id: string) {
-    const collection = await this.collection();
-    return collection.updateOne(this.getFilter(id), {
-      $set: {allowMagicLogin: false}
-    });
-  }
-
-  private getFilter(id: string) {
-    return {_id: new ObjectId(id)};
   }
 }

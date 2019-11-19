@@ -34,4 +34,4 @@ function mailJetRequest(auth: string, options: MailOptions) {
   }
 }
 
-export { to, mailJetRequest };
+export { to, mailJetRequest }
