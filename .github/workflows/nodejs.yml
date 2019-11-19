@@ -12,13 +12,14 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
-    - name: npm install, build, and test
+    - name: Install dependencies, build project and run tests
       run: |
         npm install
         npm install build
         npm test
     - uses: actions/checkout@master
-    - name: codecov
+      name: User actions
+    - name: Generate codecov coverage report
       uses: codecov/codecov-action@v1
       with:
         token: ${{ secrets.CODECOV_TOKEN }}

@@ -1,4 +1,6 @@
 if (process.env.NODE_ENV !== 'production') {
+  console.log('environment is:', process.env.NODE_ENV);
+  console.log('configuring properties');
   require('dotenv').config();
 }
 
