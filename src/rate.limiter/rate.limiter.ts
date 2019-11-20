@@ -21,14 +21,12 @@ export class RateLimiter {
   private limiter: RateLimiterMongo;
 
   constructor(database: Database) {
-    this.database = database;
     this.log = new Logger();
+    this.database = database;
   }
 
   async init() {
-    if (!this.database.isConnected()) {
-      await this.database.connect();
-    }
+    await this.database.ensureConnected();
     this.limiter = new RateLimiterMongo({
       storeClient: this.database.client,
       dbName: this.database.name,
