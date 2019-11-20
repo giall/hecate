@@ -37,7 +37,7 @@ export class UserController extends KoaController {
     const { id, email } = decode(token, Token.EmailVerification);
     ctx.log.info(`Verifying email for user with id=${id}`);
     await this.userService.verifyEmail(id, email);
-    ctx.send(200, 'Your email has been verified.');
+    ctx.send(200, 'Email has been verified.');
   }
 
   @Put('/email/change')
@@ -61,7 +61,7 @@ export class UserController extends KoaController {
   async changePassword(ctx: Context) {
     const {oldPassword, newPassword} = ctx.request.body;
     await this.userService.changePassword(ctx.user, oldPassword, newPassword);
-    ctx.send(200, 'Password changed.');
+    ctx.send(200, 'Password was changed.');
   }
 
   @Post('/password/reset/request')

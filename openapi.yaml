@@ -39,7 +39,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Successfully logged in.'
+                  user:
+                    $ref: '#/components/schemas/User'
           headers:
             'Set-Cookie':
               schema:
@@ -78,8 +84,16 @@ paths:
       summary: user logout
       operationId: logout
       responses:
-        '204':
+        '200':
           description: user logged out successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Successfully logged out.'
           headers:
             'Set-Cookie':
               schema:
@@ -110,6 +124,14 @@ paths:
       responses:
         '202':
           description: one time login link sent to user by email
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'One time login email was sent.'
   '/auth/magic.login':
     post:
       tags:
@@ -122,7 +144,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Successfully logged in.'
+                  user:
+                    $ref: '#/components/schemas/User'
           headers:
             'Set-Cookie':
               schema:
@@ -152,8 +180,16 @@ paths:
       operationId: refresh
       description: 'Refresh user session by updating access and refresh cookies'
       responses:
-        '204':
+        '200':
           description: session refreshed and new cookies set
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Successfully logged in.'
         '401':
           description: refresh cookie missing or invalid
           headers:
@@ -175,8 +211,16 @@ paths:
       operationId: invalidate
       description: 'Invalidates all user sessions. This will log the user out of every session.'
       responses:
-        '204':
+        '200':
           description: user sessions invalidated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Logged out of all devices.'
           headers:
             Set-Cookie:
               schema:
@@ -213,7 +257,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Registered successfully.'
+                  user:
+                    $ref: '#/components/schemas/User'
         '400':
           description: invalid body parameters
         '409':
@@ -237,6 +287,14 @@ paths:
       responses:
         '202':
           description: email sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Password reset email was sent.'
   '/user/password/reset':
     put:
       tags:
@@ -254,8 +312,16 @@ paths:
                 newPassword:
                   type: string
       responses:
-        '204':
+        '200':
           description: password reset successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Password was changed.'
         '410':
           description: password has already been reset, token is invalid
   '/user/password/change':
@@ -277,8 +343,16 @@ paths:
                 newPassword:
                   type: string
       responses:
-        '204':
+        '200':
           description: password changed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Password was changed.'
         '400':
           description: old and new passwords are the same
         '401':
@@ -298,8 +372,16 @@ paths:
                 token:
                   type: string
       responses:
-        '204':
+        '200':
           description: email verified
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Email has been verified.'
         '401':
           description: invalid or missing token
         '410':
@@ -324,8 +406,16 @@ paths:
                 password:
                   type: string
       responses:
-        '204':
+        '200':
           description: email changed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Email changed.'
         '400':
           description: old and new email addresses are the same
         '401':
@@ -347,8 +437,16 @@ paths:
                 password:
                   type: string
       responses:
-        '204':
+        '200':
           description: user deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Account deleted.'
           headers:
             Set-Cookie:
               schema:

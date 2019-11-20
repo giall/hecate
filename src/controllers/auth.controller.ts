@@ -101,7 +101,7 @@ export class AuthController extends KoaController {
     await this.authService.resetSessions(user.id);
     clearAuthTokens(ctx);
     ctx.log.info('Tokens successfully invalidated');
-    ctx.send(200, 'You have been logged out of all devices.');
+    ctx.send(200, 'Logged out of all devices.');
   }
 
   private async userLogin(ctx, user, rememberMe = false) {
