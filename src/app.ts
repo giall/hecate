@@ -39,6 +39,7 @@ export class App {
     ]);
     configureRoutes(app, this.controllers(), '/api');
     this.log.info('Controllers and middleware configured.');
+    app.proxy = true;
     return app;
   }
 

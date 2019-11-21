@@ -42,8 +42,8 @@ export const properties = {
   },
   cookie: {
     options: {
-      secure: false && process.env.NODE_ENV === 'production',
-      httpOnly: false && process.env.NODE_ENV === 'production',
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: process.env.NODE_ENV === 'production',
       sameSite: 'none' as 'strict' | 'lax' | 'none' | boolean
     }
   },
