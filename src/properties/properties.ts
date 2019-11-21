@@ -3,6 +3,9 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 export const properties = {
+  config: {
+    proxy: true
+  },
   logging: {
     level: process.env.LOG_LEVEL || 'info'
   },
@@ -43,7 +46,7 @@ export const properties = {
   cookie: {
     options: {
       secure: process.env.NODE_ENV === 'production',
-      httpOnly: process.env.NODE_ENV === 'production',
+      httpOnly: true,
       sameSite: 'none' as 'strict' | 'lax' | 'none' | boolean
     }
   },

@@ -18,6 +18,7 @@ import { Transporter } from './transporter/transporter';
 import { configureRoutes, KoaController } from 'koa-joi-controllers';
 import { cors, errorHandler, send } from './middleware/middleware';
 import { ctxLog, requestLogger } from './middleware/logging.middleware';
+import { properties } from './properties/properties';
 
 export class App {
   log: Logger;
@@ -39,7 +40,7 @@ export class App {
     ]);
     configureRoutes(app, this.controllers(), '/api');
     this.log.info('Controllers and middleware configured.');
-    app.proxy = true;
+    app.proxy = properties.config.proxy;
     return app;
   }
 
