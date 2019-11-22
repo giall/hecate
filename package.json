@@ -1,19 +1,21 @@
 {
   "name": "hecate",
   "version": "1.0.0",
-  "description": "Authentication service built with NodeJS",
+  "description": "Serverless authentication service built with NodeJS",
   "scripts": {
     "dev": "ts-node-dev src/main.ts | pino-pretty",
     "function": "functions-framework --target=hecate | pino-pretty",
     "lint": "eslint --fix ./**/*.ts",
     "build": "tsc && copyfiles package.json .env env.yaml .gcloudignore dist",
     "test": "jest",
-    "deploy": "gcloud functions deploy hecate --runtime nodejs8 --triger-http --env-vars-file env.yaml --memory 128 --timeout 10"
+    "deploy": "gcloud functions deploy hecate --runtime nodejs8 --trigger-http --env-vars-file env.yaml --memory 128 --timeout 10"
   },
   "keywords": [
     "koa",
     "typescript",
-    "auth"
+    "auth",
+    "serverless",
+    "functions"
   ],
   "author": "Christos Giallouros",
   "license": "MIT",
