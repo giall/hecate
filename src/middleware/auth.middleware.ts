@@ -1,9 +1,6 @@
 // requires an access token to be sent with request, and saves user ID in ctx.user
-import { accessToken, decode, Payload, refreshToken, Token } from '../utils/token.utils';
+import { decode, Payload, Token } from '../utils/token.utils';
 import { Errors } from '../error/errors';
-import { User, UserDto } from '../models/user';
-import { Context } from 'koa';
-import { properties } from '../properties/properties';
 
 async function access(ctx, next) {
   const token = ctx.cookies.get(Token.Access);

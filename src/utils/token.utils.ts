@@ -4,7 +4,7 @@ import { User } from '../models/user';
 import { properties } from '../properties/properties';
 import { log } from '../logger/logger';
 
-export interface Payload extends Data{
+export interface Payload extends Data {
   type: Token;
 }
 
