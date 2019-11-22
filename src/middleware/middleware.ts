@@ -1,4 +1,6 @@
 import { AppError } from '../error/errors';
+import * as koaCors from '@koa/cors';
+import { properties } from '../properties/properties';
 
 async function errorHandler(ctx, next) {
   try {
@@ -34,6 +36,14 @@ async function functionsFramework(ctx, next) {
   await next();
 }
 
+function cors() {
+  return koaCors({
+    origin: properties.web.host,
+    allowHeaders: 'content-type',
+    credentials: true
+  });
+}
+
 export {
-  errorHandler, send, functionsFramework
+  errorHandler, send, functionsFramework, cors
 };

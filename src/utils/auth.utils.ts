@@ -2,7 +2,7 @@ import { Context } from 'koa';
 import { accessToken, refreshToken, Token } from './token.utils';
 import { Errors } from '../error/errors';
 import { compareSync, hashSync } from 'bcrypt';
-import { User, UserDto } from '../models/user';
+import { User } from '../models/user';
 import { properties } from '../properties/properties';
 import { AuthService } from '../services/auth.service';
 
@@ -33,16 +33,13 @@ function comparePassword(password: string, hash: string) {
 
 async function userLogin(service: AuthService, ctx: Context, user: User, rememberMe = false) {
   const cookieOptions = properties.cookie.options;
-  // const expiration = properties.jwt.expiration;
   ctx.cookies.set(Token.Access, accessToken(user), {
-    ...cookieOptions,
-    // maxAge: seconds(expiration.access)
+    ...cookieOptions
   });
 
   const session = await service.addSession(user.id);
   ctx.cookies.set(Token.Refresh, refreshToken(user, session, rememberMe), {
-    ...cookieOptions,
-    // maxAge: rememberMe ? seconds(expiration.refresh) : seconds(expiration.extendedRefresh)
+    ...cookieOptions
   });
 }
 

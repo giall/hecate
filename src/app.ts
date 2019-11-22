@@ -14,9 +14,8 @@ import { RateLimiter } from './rate.limiter/rate.limiter';
 import { Transporter } from './transporter/transporter';
 
 import { configureRoutes, KoaController } from 'koa-joi-controllers';
-import { errorHandler, functionsFramework, send } from './middleware/middleware';
+import { errorHandler, functionsFramework, send, cors } from './middleware/middleware';
 import { ctxLog, requestLogger } from './middleware/logging.middleware';
-import { helmet, cors } from './middleware/security.middleware';
 import { properties } from './properties/properties';
 
 export class App {
@@ -36,7 +35,7 @@ export class App {
     this.log.info(`Environment is ${process.env.NODE_ENV}`);
     const app = new Koa();
     this.configureMiddleware(app, [
-      functionsFramework, requestLogger(), ctxLog, send, errorHandler, helmet(), cors()
+      functionsFramework, requestLogger(), ctxLog, send, errorHandler, cors()
     ]);
     configureRoutes(app, this.controllers(), '/api');
     this.log.info('Controllers and middleware configured.');
