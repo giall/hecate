@@ -1,7 +1,10 @@
 import { Context } from 'koa';
-import { Token } from './token.utils';
+import { accessToken, refreshToken, Token } from './token.utils';
 import { Errors } from '../error/errors';
 import { compareSync, hashSync } from 'bcrypt';
+import { User, UserDto } from '../models/user';
+import { properties } from '../properties/properties';
+import { AuthService } from '../services/auth.service';
 
 function clearAuthTokens(ctx: Context) {
   ctx.cookies.set(Token.Access);
@@ -28,4 +31,19 @@ function comparePassword(password: string, hash: string) {
   return compareSync(password, hash);
 }
 
-export { clearAuthTokens, setRateLimitHeaders, validateSession, hashPassword, comparePassword }
+async function userLogin(service: AuthService, ctx: Context, user: User, rememberMe = false) {
+  const cookieOptions = properties.cookie.options;
+  // const expiration = properties.jwt.expiration;
+  ctx.cookies.set(Token.Access, accessToken(user), {
+    ...cookieOptions,
+    // maxAge: seconds(expiration.access)
+  });
+
+  const session = await service.addSession(user.id);
+  ctx.cookies.set(Token.Refresh, refreshToken(user, session, rememberMe), {
+    ...cookieOptions,
+    // maxAge: rememberMe ? seconds(expiration.refresh) : seconds(expiration.extendedRefresh)
+  });
+}
+
+export { clearAuthTokens, setRateLimitHeaders, validateSession, hashPassword, comparePassword, userLogin }

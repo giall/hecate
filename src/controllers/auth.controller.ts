@@ -2,20 +2,19 @@ import { Controller, KoaController, Post, Pre, Validate } from 'koa-joi-controll
 import { Field, params } from '../utils/validation.utils';
 import { Context } from 'koa';
 import { LimiterKeys, RateLimiter } from '../rate.limiter/rate.limiter';
-import { User, UserDto } from '../models/user';
 import { UserRepository } from '../repositories/user.repository';
 import { AuthService } from '../services/auth.service';
-import { accessToken, decode, refreshToken, Token } from '../utils/token.utils';
+import { decode, Token } from '../utils/token.utils';
 import { refresh } from '../middleware/auth.middleware';
-import { properties } from '../properties/properties';
-import { clearAuthTokens, setRateLimitHeaders, validateSession } from '../utils/auth.utils';
+import { clearAuthTokens, setRateLimitHeaders, userLogin, validateSession } from '../utils/auth.utils';
 import { Errors } from '../error/errors';
+import { User, UserDto } from '../models/user';
 
 @Controller('/auth')
 export class AuthController extends KoaController {
-  userRepository: UserRepository;
-  authService: AuthService;
-  rateLimiter: RateLimiter;
+  private readonly userRepository: UserRepository;
+  private readonly authService: AuthService;
+  private readonly rateLimiter: RateLimiter;
 
   constructor(userRepository: UserRepository, authService: AuthService,
               rateLimiter: RateLimiter) {
@@ -24,7 +23,7 @@ export class AuthController extends KoaController {
     this.authService = authService;
     this.rateLimiter = rateLimiter;
   }
-c
+
   @Post('/login')
   @Validate(params({
     email: Field.Email,
@@ -56,7 +55,7 @@ c
   async logout(ctx: Context) {
     await this.authService.removeSession(ctx.user, ctx.session);
     clearAuthTokens(ctx);
-    ctx.send(200, {message: 'Successfully logged out.'});
+    ctx.send(200, 'Successfully logged out.');
   }
 
   @Post('/magic.login/request')
@@ -104,23 +103,8 @@ c
     ctx.send(200, 'Logged out of all devices.');
   }
 
-  private async userLogin(ctx, user, rememberMe = false) {
-    await this.setAuthTokens(ctx, user, rememberMe);
+  async userLogin(ctx: Context, user: User, rememberMe = false) {
+    await userLogin(this.authService, ctx, user, rememberMe);
     ctx.send(200, {message: 'Successfully logged in.', user: UserDto.from(user)});
-  }
-
-  private async setAuthTokens(ctx: Context, user: User, rememberMe = false) {
-    const cookieOptions = properties.cookie.options;
-    // const expiration = properties.jwt.expiration;
-    ctx.cookies.set(Token.Access, accessToken(user), {
-      ...cookieOptions,
-      // maxAge: seconds(expiration.access)
-    });
-
-    const session = await this.authService.addSession(user.id);
-    ctx.cookies.set(Token.Refresh, refreshToken(user, session, rememberMe), {
-      ...cookieOptions,
-      // maxAge: rememberMe ? seconds(expiration.refresh) : seconds(expiration.extendedRefresh)
-    });
   }
 }

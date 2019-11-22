@@ -55,7 +55,7 @@ export class App {
     const rateLimiter = new RateLimiter(this.database);
     return [
       new AuthController(userRepository, authService, rateLimiter),
-      new UserController(userService),
+      new UserController(userService, authService),
       new RootController()
     ];
   }

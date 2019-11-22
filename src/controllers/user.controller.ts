@@ -5,14 +5,18 @@ import { UserDto } from '../models/user';
 import { decode, Token } from '../utils/token.utils';
 import { access } from '../middleware/auth.middleware';
 import { UserService } from '../services/user.service';
+import { userLogin } from '../utils/auth.utils';
+import { AuthService } from '../services/auth.service';
 
 @Controller('/user')
 export class UserController extends KoaController {
-  private userService: UserService;
+  private readonly userService: UserService;
+  private readonly authService: AuthService;
 
-  constructor(userService: UserService) {
+  constructor(userService: UserService, authService: AuthService) {
     super();
     this.userService = userService;
+    this.authService = authService;
   }
 
   @Post('/register')
@@ -24,6 +28,7 @@ export class UserController extends KoaController {
   async register(ctx: Context) {
     const {username, email, password} = ctx.request.body;
     const user = await this.userService.register({username, email, password});
+    await userLogin(this.authService, ctx, user);
     ctx.send(201, {message: 'Registered successfully.', user: UserDto.from(user)});
   }
 

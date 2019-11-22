@@ -6,7 +6,6 @@ export class RootController extends KoaController {
 
   @Get('/ping')
   async ping(ctx: Context) {
-    ctx.status = 200;
-    ctx.body = 'Authentication service is up and running...';
+    ctx.send(200, 'Authentication service is up and running...');
   }
 }
