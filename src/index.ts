@@ -11,6 +11,6 @@ function create(): App {
 }
 
 const app = create();
-const auth = app.bootstrap().callback();
+const hecate = app.bootstrap().callback();
 
-export { auth }
+export { hecate }

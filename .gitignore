@@ -2,11 +2,8 @@ node_modules/
 dist/
 coverage/
 
-.env
 .vscode/
-
-db.sqlite
-
 .idea
 
-app.yaml
+.env
+env.yaml

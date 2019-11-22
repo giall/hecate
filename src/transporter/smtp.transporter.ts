@@ -1,18 +1,15 @@
-import * as nodemailer from 'nodemailer';
 import { properties } from '../properties/properties';
 import { MailOptions, Transporter } from './transporter';
 
+// if using this class, run:
+//  npm install nodemailer
+//  npm install @types/nodemailer --save
 export class SmtpTransporter implements Transporter {
-  transporter: nodemailer.Transporter;
+  private transporter; // nodemailer.Transporter
 
   constructor() {
-    const { host, auth } = properties.smtp;
-    this.transporter = nodemailer.createTransport({
-      host,
-      port: 587,
-      secure: true,
-      auth
-    });
+    const nodemailer = { createTransport: (_) => 0 }; // remove this line if using class
+    this.transporter = nodemailer.createTransport(properties.smtp);
   }
 
   send(options: MailOptions): Promise<void> {

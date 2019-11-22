@@ -1,1 +1,6 @@
-app.yaml
+.env
+env.yaml
+# used to run app locally
+main.js
+# mailjet.transporter.js is used instead
+transporter/smtp.transporter.js

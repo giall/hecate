@@ -1,7 +1,4 @@
-import * as koaCors from '@koa/cors';
 import { AppError } from '../error/errors';
-import { properties } from '../properties/properties';
-
 
 async function errorHandler(ctx, next) {
   try {
@@ -22,14 +19,6 @@ async function errorHandler(ctx, next) {
   }
 }
 
-function cors() {
-  return koaCors({
-    origin: properties.web.host,
-    allowHeaders: 'content-type',
-    credentials: true
-  });
-}
-
 async function send(ctx, next) {
   ctx.send = function send(status: number, value: string | object) {
     ctx.status = status;
@@ -38,6 +27,13 @@ async function send(ctx, next) {
   await next();
 }
 
+async function functionsFramework(ctx, next) {
+  if (!['development', 'test', 'ci'].includes(process.env.NODE_ENV)) {
+    ctx.request = ctx.request.req; // for Functions Framework environments
+  }
+  await next();
+}
+
 export {
-  errorHandler, cors, send
+  errorHandler, send, functionsFramework
 };

@@ -5,8 +5,8 @@ import { Logger } from '../logger/logger';
 import { mailJetRequest } from '../utils/mail.utils';
 
 export class MailJetTransporter implements Transporter {
-  log: Logger;
-  auth: string;
+  private log: Logger;
+  private readonly auth: string;
 
   constructor() {
     this.log = new Logger();

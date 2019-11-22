@@ -24,7 +24,7 @@ export class AuthController extends KoaController {
     this.authService = authService;
     this.rateLimiter = rateLimiter;
   }
-
+c
   @Post('/login')
   @Validate(params({
     email: Field.Email,

@@ -31,7 +31,9 @@ export const properties = {
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS
-    }
+    },
+    port: 587,
+    secure: true
   },
   mailjet: {
     username: process.env.MJ_APIKEY_PUBLIC,
