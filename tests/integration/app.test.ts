@@ -56,6 +56,7 @@ async function run() {
   });
   const dbUri = await mongod.getConnectionString();
   database = new Database(dbUri);
+  await database.ensureConnected();
   transporter = new DummyTransporter();
   server = new App(database, transporter).bootstrap().listen(3001);
 }

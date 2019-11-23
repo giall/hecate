@@ -19,7 +19,13 @@ export class Database {
     this.client = new MongoClient(uri, options);
   }
 
-  async connect(): Promise<void> {
+  async ensureConnected() {
+    if (!this.client.isConnected()) {
+      await this.connect();
+    }
+  }
+
+  private async connect(): Promise<void> {
     this.log.info('Connecting to database...');
     await this.client.connect();
     this.log.info('Successfully connected to database.');
@@ -33,11 +39,5 @@ export class Database {
   async getCollection(collection: string): Promise<Collection> {
     await this.ensureConnected();
     return this.client.db(this.name).collection(collection);
-  }
-
-  async ensureConnected() {
-    if (!this.client.isConnected()) {
-      await this.client.connect();
-    }
   }
 }
