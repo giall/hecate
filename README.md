@@ -99,11 +99,98 @@ export const properties = {
 ```
 
 ### Mail service
-Hecate sends emails for email verification, password resets and magic logins, and also when a user changes their password.
+Hecate sends emails for email verification, password resets and magic logins, and also when a user changes their password. You can configure Hecate to send emails either through an SMTP server or a mail API such as Mailjet.
 
-TODO node transporter
+#### Nodemailer
+You can send emails through an SMTP server with Nodemailer. To use it, make sure the `Transporter` set up in `app.ts` is of class `SmtpTransporter` and configure the required properties.
+```javascript
+// src/properties/properties.ts
+export const properties = {
+  smtp: {
+    host: process.env.SMTP_HOST,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS
+    },
+    port: 587,
+    secure: true
+  }
+}
+```
 
-TODO mailjet api
+#### Mailjet
+You can use the [Mailjet](https://www.mailjet.com/) API by using the `MailjetTransporter` class and setting the public and private keys in the properties.
+
+```javascript
+// src/properties/properties.ts
+export const properties = {
+  mailjet: {
+    username: process.env.MJ_APIKEY_PUBLIC,
+    password: process.env.MJ_APIKEY_PRIVATE
+  }
+}
+```
+
+You can also write your own custom transporter by creating a class that implements the `Transporter` interface.
+
+### Usage
+Any HTTP requests to Hecate that either set cookies (`/login`, `/register`, `/magic.login`), or require cookies to be sent (email/password change) need to have the `withCredentials` option to true. Below is an example using Angular's HTTP client, but this would be similar with other HTTP request libraries such as Axios.
+
+```javascript
+function login(email, password) {
+  return this.http.post(url('auth/login'), { email, password }, {
+    withCredentials: true
+  });
+}
+
+login('hecate@email.com', 'password123').subscribe(
+  (res) => {
+    console.log('Response message:', res.message);
+    console.log('User is:', res.user);
+  },
+  (err) => {
+    console.error(err.error);
+  }
+);
+```
+
+#### Refresh mechanism
+When the access token expires, the user will have to refresh both the access and refresh tokens by calling the `/refresh` endpoint. In your UI app, you could attempt to refresh the tokens after a `401 Unauthorized` response from your back-end, and then retry the failed request.
+
+Here is an example of an RxJS pipe that uses this token refresh mechanism:
+
+```javascript
+import { Observable, of, throwError } from 'rxjs';
+import { catchError, mergeMap, tap } from 'rxjs/operators';
+
+function refresh() {
+  return http.post('https://your-hecate-function.com/api/auth/refresh', {}, {
+    withCredentials: true
+  });
+}
+
+function auth(request) { // request is an RxJS Observable (HTTP request)
+  let success = false;
+  return request.pipe(
+    tap(_ => success = true),
+    catchError(err => {
+      if (err.status === 401) {
+        console.log('Unauthorized request; attempting to refresh tokens...');
+        return refresh();
+      } else {
+        return throwError(err);
+      }
+    }), // refresh tokens if unauthorized
+    mergeMap(res => success ? of(res) : request) // retry request if first attempt failed
+  );
+}
+
+const body = { oldPassword: 'password123', newPassword: 'password456' };
+const request = http.post('https://your-hecate-function.com/api/user/password/change', body, {
+  withCredentials: true
+});
+auth(request).subscribe();
+```
 
 ## Scripts
 ### Build project
