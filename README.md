@@ -1,12 +1,16 @@
 [![Actions Status](https://github.com/giall/hecate/workflows/hecate/badge.svg)](https://github.com/giall/hecate/actions)
 [![codecov](https://codecov.io/gh/giall/hecate/branch/master/graph/badge.svg?token=b46BG18lRZ)](https://codecov.io/gh/giall/hecate)
 # Hecate
-A stateless, JWT-based authentication service, optimized for serverless/FaaS. Built with NodeJS and Koa. 
+A stateless, JWT-based authentication service for single-page applications, optimized for serverless/FaaS. Built with NodeJS and Koa. 
 
 ## Features
 ### JWT-based authentication
 On a successful login, an access cookie (contains access JWT token, short-lived) and a refresh cookie (contains refresh JWT token) are set. Other services can then receive the access token to verify the authenticated users. These services will have to share the same JWT secret.
-The JWT secret and the tokens' expiration properties can be configured from the properties file. 
+
+[Read more about JSON Web Tokens (JWT)](https://jwt.io/introduction)
+[Read more about JWT authentication](https://blog.logrocket.com/jwt-authentication-best-practices)
+
+The JWT secret and the tokens' expiration properties can be configured from the properties file.
 
 ```javascript
 // src/properties/properties.ts
@@ -133,7 +137,7 @@ export const properties = {
 
 You can also write your own custom transporter by creating a class that implements the `Transporter` interface.
 
-### Usage
+## Usage
 Any HTTP requests to Hecate that either set cookies (`/login`, `/register`, `/magic.login`), or require cookies to be sent (email/password change) need to have the `withCredentials` option to true. Below is an example using Angular's HTTP client, but this would be similar with other HTTP request libraries such as Axios.
 
 ```javascript
@@ -154,7 +158,7 @@ login('hecate@email.com', 'password123').subscribe(
 );
 ```
 
-#### Refresh mechanism
+### Refresh mechanism
 When the access token expires, the user will have to refresh both the access and refresh tokens by calling the `/refresh` endpoint. In your UI app, you could attempt to refresh the tokens after a `401 Unauthorized` response from your back-end, and then retry the failed request.
 
 Here is an example of an RxJS pipe that uses this token refresh mechanism:
@@ -209,7 +213,7 @@ npm run dev
 ```
 
 ### Run function
-This will simulate the Functions Framework environment which the function can be deployed to.
+This will simulate the [Functions Framework](https://cloud.google.com/functions/docs/functions-framework) environment which the function can be deployed to.
 ```
 npm run build
 npm run function --prefix dist/
