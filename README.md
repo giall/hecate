@@ -8,6 +8,7 @@ A stateless, JWT-based authentication service for single-page applications, opti
 On a successful login, an access cookie (contains access JWT token, short-lived) and a refresh cookie (contains refresh JWT token) are set. Other services can then receive the access token to verify the authenticated users. These services will have to share the same JWT secret.
 
 [Read more about JSON Web Tokens (JWT)](https://jwt.io/introduction)
+
 [Read more about JWT authentication](https://blog.logrocket.com/jwt-authentication-best-practices)
 
 The JWT secret and the tokens' expiration properties can be configured from the properties file.

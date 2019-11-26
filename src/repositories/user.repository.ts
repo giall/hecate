@@ -28,7 +28,7 @@ export class UserRepository {
     return User.from(entity);
   }
 
-  async find(options: {}): Promise<User> {
+  async find(options: Partial<User>): Promise<User> {
     const collection = await this.collection();
     const entity = await collection.findOne(options);
     return entity && User.from(entity);
@@ -40,7 +40,7 @@ export class UserRepository {
     return result.ops[0] as User;
   }
 
-  async update(id: string, options: {}) {
+  async update(id: string, options: Partial<User>) {
     const collection = await this.collection();
     return collection.updateOne(filter(id), {
       $set: options

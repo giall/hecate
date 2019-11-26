@@ -14,11 +14,11 @@ export class User {
     return this._id.toHexString();
   }
 
-  private constructor(values: {}) {
+  private constructor(values: Partial<User>) {
     Object.assign(this, values);
   }
 
-  static from(values: {}): User {
+  static from(values: Partial<User>): User {
     return new User(values);
   }
 
@@ -27,7 +27,7 @@ export class User {
       username: credentials.username,
       email: credentials.email,
       hash: hashSync(credentials.password, 10),
-      magicLogin: false,
+      allowMagicLogin: false,
       verified: false,
       sessions: []
     });
@@ -45,7 +45,7 @@ export class UserDto {
   email: string;
   verified: boolean;
 
-  private constructor(values: {}) {
+  private constructor(values: Partial<User>) {
     Object.assign(this, values);
   }
 
