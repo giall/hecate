@@ -67,12 +67,12 @@ function decode(token: string, type: Token) {
   try {
     payload = verify(token, secret) as Payload;
   } catch (err) {
-    log.warn(`Invalid token: ${err.name}`);
+    log.warn(`Error while verifying token: ${err.name}`);
     throw Errors.unauthorized('Invalid token.');
   }
   if (payload.type !== type) {
     log.warn(`Token payload is of type ${payload.type} and not expected type ${type}`);
-    throw Errors.forbidden('Invalid token.');
+    throw Errors.unauthorized('Invalid token.');
   }
   return payload;
 }
