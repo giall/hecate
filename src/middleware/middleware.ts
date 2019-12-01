@@ -10,7 +10,7 @@ async function errorHandler(ctx, next) {
       ctx.status = err.status;
       ctx.body = err.message;
     } else if (err.name === 'ValidationError') {
-      ctx.log.info(err);
+      ctx.log.warn(err);
       ctx.status = 400;
       ctx.message = 'Invalid input.';
     } else {

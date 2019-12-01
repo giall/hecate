@@ -6,11 +6,7 @@ export class Logger {
 
   constructor() {
     const { level } = properties.logging;
-    if (level === 'test') {
-      this.log = console;
-    } else {
-      this.log = pino({level});
-    }
+    this.log = (level !== 'test') ? pino({level}) : console;
   }
 
   debug(log: any, ...args: any[]) {
