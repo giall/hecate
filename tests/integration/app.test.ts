@@ -256,7 +256,7 @@ describe('/api/auth/magic.login', () => {
       .send({
         token: passwordReset(user)
       });
-    expect(response.status).toEqual(403);
+    expect(response.status).toEqual(401);
   });
 
   test('Should fail if token user ID is not valid', async () => {

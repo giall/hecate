@@ -19,10 +19,9 @@ import { ctxLog, requestLogger } from './middleware/logging.middleware';
 import { properties } from './properties/properties';
 
 export class App {
-  log: Logger;
-
-  database: Database;
-  mail: MailService;
+  private readonly log: Logger;
+  private readonly database: Database;
+  private readonly mail: MailService;
 
   constructor(database: Database, transporter: Transporter) {
     this.log = new Logger();

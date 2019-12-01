@@ -2,7 +2,7 @@ import * as pino from 'pino';
 import { properties } from '../properties/properties';
 
 export class Logger {
-  private log: pino.Logger | Console;
+  private readonly log: pino.Logger | Console;
 
   constructor() {
     const { level } = properties.logging;

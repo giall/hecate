@@ -7,14 +7,12 @@ import { MailService } from './mail.service';
 import { comparePassword, hashPassword } from '../utils/auth.utils';
 
 export class UserService {
-  private log: Logger;
-
-  private userRepository: UserRepository;
-  private mailService: MailService;
+  private readonly log: Logger;
+  private readonly userRepository: UserRepository;
+  private readonly mailService: MailService;
 
   constructor(userRepository: UserRepository, mailService: MailService) {
     this.log = new Logger();
-
     this.userRepository = userRepository;
     this.mailService = mailService;
   }

@@ -6,8 +6,8 @@ import { Logger } from '../logger/logger';
 import { to } from '../utils/mail.utils';
 
 export class MailService {
-  private log: Logger;
-  private transporter: Transporter;
+  private readonly log: Logger;
+  private readonly transporter: Transporter;
 
   private readonly app: string;
   private readonly from: Address;

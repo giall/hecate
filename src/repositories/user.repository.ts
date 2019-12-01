@@ -5,9 +5,8 @@ import { Logger } from '../logger/logger';
 import { filter } from '../utils/db.utils';
 
 export class UserRepository {
-
-  private log: Logger;
-  private database: Database;
+  private readonly log: Logger;
+  private readonly database: Database;
 
   constructor(database: Database) {
     this.log = new Logger();

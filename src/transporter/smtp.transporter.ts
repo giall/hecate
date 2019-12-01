@@ -5,7 +5,7 @@ import { MailOptions, Transporter } from './transporter';
 //  npm install nodemailer
 //  npm install @types/nodemailer --save
 export class SmtpTransporter implements Transporter {
-  private transporter; // nodemailer.Transporter
+  private readonly transporter; // nodemailer.Transporter
 
   constructor() {
     const nodemailer = { createTransport: (_) => 0 }; // remove this line if using class

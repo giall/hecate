@@ -3,11 +3,10 @@ import { Logger } from '../logger/logger';
 import { properties } from '../properties/properties';
 
 export class Database {
-
   private log: Logger;
 
-  name: string;
-  client: MongoClient;
+  readonly name: string;
+  readonly client: MongoClient;
 
   constructor(uri: string) {
     this.log = new Logger();

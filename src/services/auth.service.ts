@@ -7,14 +7,12 @@ import { compare } from 'bcrypt';
 import { MailService } from './mail.service';
 
 export class AuthService {
-  private log: Logger;
-
-  private userRepository: UserRepository;
-  private mailService: MailService;
+  private readonly log: Logger;
+  private readonly userRepository: UserRepository;
+  private readonly mailService: MailService;
 
   constructor(userRepository: UserRepository, mail: MailService) {
     this.log = new Logger();
-
     this.userRepository = userRepository;
     this.mailService = mail;
   }
