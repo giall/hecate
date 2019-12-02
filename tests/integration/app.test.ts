@@ -2,9 +2,6 @@ import * as request from 'supertest';
 import * as http from 'http';
 
 import { properties } from '../../src/properties/properties';
-properties.logging.level = 'test';
-properties.options.emailVerificationRequired = true;
-
 import { v4 as uuid } from 'uuid';
 import { chance } from '../utils/chance';
 import { accessToken, emailVerification, magicLogin, passwordReset, refreshToken } from '../../src/utils/token.utils';
@@ -14,6 +11,8 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import { User } from '../../src/models/user';
 import { UserRepository } from '../../src/repositories/user.repository';
 import { DummyTransporter } from '../mocks/dummy.transporter';
+
+properties.options.emailVerificationRequired = true;
 
 let server: http.Server;
 let mongod: MongoMemoryServer;
