@@ -226,3 +226,6 @@ This will deploy the function to the Google Cloud Platform as a cloud function. 
 npm run build
 npm run deploy --prefix dist/
 ```
+
+## Examples
+[Scribe](http://scribe-notes.web.app/) - a simple note taking web application using Hecate. [[demo](https://scribe-notes.web.app)] [[source](https://github.com/giall/scribe)]
