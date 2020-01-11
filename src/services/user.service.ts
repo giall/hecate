@@ -79,6 +79,7 @@ export class UserService {
     const user = await this.userRepository.findById(userId);
     this.verifyPassword(user, oldPassword);
     await this.userRepository.update(userId, {hash: hashPassword(newPassword)});
+    await this.mailService.passwordChange(user);
     this.log.info(`Changed password for userId=${userId}`);
   }
 
