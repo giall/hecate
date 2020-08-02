@@ -8,7 +8,7 @@
     "lint": "eslint --fix ./**/*.ts",
     "build": "tsc && copyfiles package.json .env env.yaml .gcloudignore dist",
     "test": "jest",
-    "deploy": "gcloud functions deploy hecate --runtime nodejs8 --trigger-http --env-vars-file env.yaml --memory 128 --timeout 10"
+    "deploy": "gcloud functions deploy hecate --runtime nodejs10 --trigger-http --env-vars-file env.yaml --memory 128 --timeout 10"
   },
   "keywords": [
     "koa",
